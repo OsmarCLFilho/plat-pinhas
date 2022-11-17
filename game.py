@@ -60,40 +60,65 @@ class Player(Camera):
     def set_player_position(self, position):
         self.player_position = position
         self.position = position + (0,0,self.height)
-
-    def jump_step(self, t):
-        y = -GRAVITY*np.square(t)+self.strength*t
-        pos = self.player_position
-        if y >= 0:
-            pos[2] = y
-        else:
-            pos[2] = 0
+        
+    def get_x(self):
+        return self.position[0]
+    
+    def get_y(self):
+        return self.position[1]
+    
+    def get_z(self):
+        return self.position[2]
+    
+    def set_x(self, x):
+        pos = self.get_player_position()
+        pos[0] = x
         self.set_player_position(pos)
+        
+    def set_y(self, y):
+        pos = self.get_player_position()
+        pos[1] = y
+        self.set_player_position(pos)
+        
+    def set_z(self, z):
+        pos = self.get_player_position()
+        pos[2] = z
+        self.set_player_position(pos)
+    
+    def jump_step(self, t):
+        z = -GRAVITY*np.square(t)+self.strength*t
+        if z >= 0:
+            self.set_z(z)
+        else:
+            self.set_z(0)
 
     def get_damage(self, amount):
+        self.iframes = 10
+        self.healing = 200
         self.hp_bar.sprite.get_damage(amount)
 
     def get_heal(self, amount):
         self.hp_bar.sprite.get_heal(amount)
 
 class Spike(Body):
-    def __init__(self, mesh=None, position=..., hitbox_size=None):
+    def __init__(self, mesh=None, position=..., hitbox_size=None, solid=False):
         self.hitbox_size = np.array(hitbox_size, dtype=float)
+        self.solid = solid
         super().__init__(mesh, position)
+        
+def colliding(body, player):
+    l, w, h = body.hitbox_size / 2
+    body_pos = body.get_position()
+    x, y, z = player.get_player_position() - body_pos
 
-    def colliding(self, point):
-        l, w, h = self.hitbox_size / 2
-        x1, y1, z1 = self.position
-        x2, y2, z2 = point
-
-        x = x2 > x1-l and x2 < x1+l
-        y = y2 > y1-w and y2 < y1+w
-        z = z2 > z1-h and z2 < z1+h
-
-        if x and y and z:
-            return True
-        else:
-            return False
+    if abs(x) < l and abs(y) < w and abs(z) < h:
+        if not body.solid and not player.iframes:
+            player.get_damage(20)
+        elif body.solid:
+            if abs(y/x) < w/l:
+                player.set_x(body_pos[0] + np.sign(x)*l)
+            if abs(y/x) >= w/l:
+                player.set_y(body_pos[1] + np.sign(y)*w)
 
 def start_game():
     """ Starts pygame modules and creates a surface for the game.
@@ -129,9 +154,14 @@ def main():
     vertices_1 = ((1, 0, 0), (0, 1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, -1))
     triangles_1 = ((0,1,2), (1,3,2), (3,4,2), (4,0,2), (0,5,1), (1,5,3), (3,5,4), (4,5,0))
     mesh_1 = Mesh(vertices_1, triangles_1)
-
-    spike = Spike(mesh_1, (20,0,0), (2,2,1))
-
+    
+    vertices_2 = ((1,1,2), (1,1,-2), (1,-1,2), (1,-1,-2), (-1,1,2), (-1,1,-2), (-1,-1,2), (-1,-1,-2))
+    triangles_2 = ((2,1,0),(1,2,3),(0,1,4),(5,4,1),(4,7,6),(7,4,5),(6,7,2),(3,2,7),(4,2,0),(2,4,6))
+    mesh_2 = Mesh(vertices_2, triangles_2)
+    
+    spike = Spike(mesh_1, (20,0,0), (2,2,1), False)
+    wall = Spike(mesh_2, (20,0,0), (3,3,4), True)
+    
     obstacles =[]
 
     main_space = Space(obstacles)
@@ -161,7 +191,7 @@ def main():
         #Spawn new spike
         if time_instant > 0.5:
             time_instant -= 0.5
-            new_spike = copy.copy(spike)
+            new_spike = copy.copy(np.random.choice([wall,spike]))
             x = np.random.randint(0, 5)-2
             new_spike.set_position(new_spike.get_position() - (spikes_speed*time_instant,x*2,0))
             obstacles.append(new_spike)
@@ -239,8 +269,15 @@ def main():
 
         displacement = np.array([(direction[0] - direction[2])*player.costhe + (direction[3] - direction[1])*player.sinthe,
                                  (direction[0] - direction[2])*player.sinthe - (direction[3] - direction[1])*player.costhe,
-                                 (direction[5] - direction[4])])*delta_time*CAMERA_SPEED
+                                 (direction[5] - direction[4])])*delta_time*CAMERA_SPEED        
+        
+        player.set_player_position(player.get_player_position() + displacement)    
 
+        if abs(player.get_player_position()[0]) >= 10:
+            player.set_x(10*np.sign(player.get_player_position()[0]))
+        if abs(player.get_player_position()[1]) >= 4:
+            player.set_y(4*np.sign(player.get_player_position()[1]))
+    
         if jumping:
             jump_time += delta_time
             player.jump_step(jump_time)
@@ -257,10 +294,7 @@ def main():
             player.get_heal(1)
 
         for i in obstacles:
-            if i.colliding(player.get_player_position()) and not player.iframes:
-                player.iframes = 10
-                player.healing = 200
-                player.get_damage(20)
+            colliding(i, player)
             if i.get_position()[0] < -10:
                 obstacles.remove(i)
             else:
@@ -268,8 +302,6 @@ def main():
 
         if player.dead():
             game_running = False
-
-        player.set_player_position(player.get_player_position() + displacement)
 
         #Render stuff
         player.hp_bar.update(surface)
