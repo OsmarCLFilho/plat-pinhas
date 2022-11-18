@@ -18,8 +18,7 @@ class Camera:
     :param rotation: Azimuthal and polar angle of the camera
     :type rotation: tuple with 2 float values. The first ranges from 0 to 2pi and the second from -pi/2 to pi/2
     """
-    def __init__(self, position, rotation):
-        super().__init__()
+    def __init__(self, position=(0, 0, 0), rotation=(0, 0)):
         self.position = np.array(position, dtype=float)
         self.rotation = np.array(rotation, dtype=float)
         self.rotation[0] = self.rotation[0]%(2*pi)
@@ -39,6 +38,8 @@ class Camera:
 
         self.sinthe = sinthe
         self.costhe = costhe
+        self.sinphi = sinphi
+        self.cosphi = cosphi
         self.transform_matrix = np.array([[costhe*cosphi, sinthe*cosphi, sinphi],
                                           [-sinthe, costhe, 0],
                                           [-costhe*sinphi, -sinthe*sinphi, cosphi]])
@@ -62,6 +63,8 @@ class Camera:
 
         self.sinthe = sinthe
         self.costhe = costhe
+        self.sinphi = sinphi
+        self.cosphi = cosphi
         self.transform_matrix = np.array([[costhe*cosphi, sinthe*cosphi, sinphi],
                                           [-sinthe, costhe, 0],
                                           [-costhe*sinphi, -sinthe*sinphi, cosphi]])
@@ -133,7 +136,7 @@ def project_triangle(vertices, camera):
     M = camera.transform_matrix
     V = np.matmul(M, V.T).T
 
-    if V[0,0] < 0 or V[1,0] < 0 or V[2,0] < 0:
+    if V[0,0] < 1 or V[1,0] < 1 or V[2,0] < 1:
         return None
 
     #Scaled vectors such that the first component is 1
@@ -152,7 +155,7 @@ def project_triangle(vertices, camera):
     return V[:,1:]
 
 #Render package
-def project_space(space, camera):
+def project_space(space, camera, player_sprite):
     drawable_trigs = []
     for body in sorted(space.bodies, key=lambda b: np.linalg.norm((b.position - camera.position), ord=1), reverse=True):
         mesh = body.mesh
@@ -160,7 +163,7 @@ def project_space(space, camera):
         if mesh == None:
             pass
 
-        else:
+        elif type(mesh) == Mesh:
             for index, trig in enumerate(mesh.triangles):
                 trig_vertices = np.array([mesh.vertices[trig[0]],
                                           mesh.vertices[trig[1]],
@@ -179,23 +182,27 @@ def project_space(space, camera):
                     #Bad life choices right here, change this later, add a triangle class or whatever
                     drawable_trigs.append(np.column_stack((projection, mesh.normals[index])))
 
-    return np.array(drawable_trigs)
+        elif type(mesh) == str:
+            drawable_trigs.append(player_sprite)
+
+    return drawable_trigs
 
 #End of package things
 
 def draw_wireframes(surface, triangles):
     for tri in triangles:
         pg.draw.aalines(surface, (255, 255, 255), points=tri[:,:2].tolist(), closed=True)
-
 def draw_flat_shade(surface, triangles, light_direction):
     for tri in triangles:
-        shade = ((np.dot(tri[:,2], light_direction) + 1)*75) + 50
-        if shade > 255:
-            shade = 255
+        if type(tri) == np.ndarray:
+            shade = ((np.dot(tri[:,2], light_direction) + 1)*75) + 50
+            if shade > 255:
+                shade = 255
 
-        pg.draw.polygon(surface, (shade, shade, shade), points=tri[:,:2].tolist())
-        pg.draw.aalines(surface, (shade/4, shade/4, shade/4), points=tri[:,:2].tolist(), closed=True)
+            pg.draw.polygon(surface, (shade, shade, shade), points=tri[:,:2].tolist())
+            pg.draw.aalines(surface, (shade/4, shade/4, shade/4), points=tri[:,:2].tolist(), closed=True)
 
-
-
-
+        elif type(tri) == pg.Surface:
+            w = tri.get_width()
+            h = tri.get_height()
+            surface.blit(tri, [(SCREEN_WIDTH - w)/2, (SCREEN_HEIGHT - h)/2])
