@@ -116,6 +116,15 @@ class Body:
 
     def get_position(self):
         return self.position
+    
+    def set_posx(self, x):
+        self.position[0] = x
+
+    def set_posy(self, y):
+        self.position[1] = y
+
+    def set_posz(self, z):
+        self.position[2] = z
 
 #Render package
 class Space:
@@ -125,6 +134,11 @@ class Space:
 
     def add_bodies(self, bodies):
         self.bodies.extend(bodies)
+
+    def remove_body(self, body):
+        self.bodies.remove(body)
+
+                
 
 #Render package
 def project_triangle(vertices, camera):
