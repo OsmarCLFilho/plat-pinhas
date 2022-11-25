@@ -100,10 +100,19 @@ class Mesh:
 
         self.normals = np.array(self.normals)
 
+#Automaticaly creates the vertices and triangles for a rectangular mesh with the desired length, width and height.
+#Then, creates such a mesh
 class PlatMesh(Mesh):
     def __init__(self, length, width, height):
-        pass
-        #Calculo dos vértices a partir das dimensões
+        vertices = []
+        for x in (1, -1):
+            for y in (1, -1):
+                for z in (1, -1):
+                    vertices.append((x*length/2,y*width/2,z*height/2))
+
+        triangles = ((0,2,1),(1,2,3),(4,0,5),(5,0,1),(6,4,7),(7,4,5),(2,6,3),(3,6,7),(4,6,0),(0,6,2),(1,3,5),(5,3,7))
+
+        self.setup_mesh(vertices, triangles)
 
 #Render package
 class Body:
@@ -169,7 +178,8 @@ def project_triangle(vertices, camera):
     return V[:,1:]
 
 #Render package
-def project_space(space, camera, player_sprite):
+def project_space(space, camera, ps):
+    player_sprite = ps
     drawable_trigs = []
     for body in sorted(space.bodies, key=lambda b: np.linalg.norm((b.position - camera.position), ord=1), reverse=True):
         mesh = body.mesh
@@ -177,7 +187,8 @@ def project_space(space, camera, player_sprite):
         if mesh == None:
             pass
 
-        elif type(mesh) == Mesh:
+        #this will catch Mesh and all its subclasses
+        elif isinstance(mesh, Mesh):
             for index, trig in enumerate(mesh.triangles):
                 trig_vertices = np.array([mesh.vertices[trig[0]],
                                           mesh.vertices[trig[1]],
@@ -196,8 +207,7 @@ def project_space(space, camera, player_sprite):
                     #Bad life choices right here, change this later, add a triangle class or whatever
                     drawable_trigs.append(np.column_stack((projection, mesh.normals[index])))
 
-        elif type(mesh) == str:
-            drawable_trigs.append(player_sprite)
+    drawable_trigs.append(player_sprite)
 
     return drawable_trigs
 
@@ -208,7 +218,7 @@ def draw_wireframes(surface, triangles):
         pg.draw.aalines(surface, (255, 255, 255), points=tri[:,:2].tolist(), closed=True)
 def draw_flat_shade(surface, triangles, light_direction):
     for tri in triangles:
-        if type(tri) == np.ndarray:
+        if isinstance(tri, np.ndarray):
             shade = ((np.dot(tri[:,2], light_direction) + 1)*75) + 50
             if shade > 255:
                 shade = 255
@@ -216,7 +226,8 @@ def draw_flat_shade(surface, triangles, light_direction):
             pg.draw.polygon(surface, (shade, shade, shade), points=tri[:,:2].tolist())
             pg.draw.aalines(surface, (shade/4, shade/4, shade/4), points=tri[:,:2].tolist(), closed=True)
 
-        elif type(tri) == pg.Surface:
+        elif isinstance(tri, pg.Surface):
+            print("drawing player")
             w = tri.get_width()
             h = tri.get_height()
             surface.blit(tri, [(SCREEN_WIDTH - w)/2, (SCREEN_HEIGHT - h)/2])
