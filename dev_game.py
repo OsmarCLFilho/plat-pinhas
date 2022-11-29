@@ -5,9 +5,9 @@ import pygame as pg
 import numpy as np
 from math import pi
 
-CAMERA_SPEED = 10
+CAMERA_SPEED = 20
 CAMERA_DISTANCE = 15
-GRAVITY = 30
+GRAVITY = 40
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
 SCREEN_RATIO = SCREEN_WIDTH/SCREEN_HEIGHT
 MOUSE_SENSITIVITY = 0.1
@@ -85,6 +85,7 @@ def colliding(body, player, space):
     x, y, z = player.get_position() - body_pos
 
     if abs(x) < l and abs(y) < w and abs(z) < h:
+
         if not body.solid and not player.iframes:
             player.apply_damage(20)
 
@@ -107,7 +108,8 @@ def colliding(body, player, space):
 
             else:
                 player.set_posz(player.get_position()[2] + np.sign(z)*(h-abs(z)))
-                player.able_to_jump = True
+                if np.sign(z) == 1:
+                    player.able_to_jump = True
                 player.vertical_speed = 0
 
             #if abs(y/x) < w/l:
@@ -125,6 +127,9 @@ def colliding(body, player, space):
                         #i.set_position(i.get_position() + vec)
                         #i.set_posy(-np.sign(y)*w)
                         #i.set_position(i.get_position() - vec)
+
+def rotation(theta):
+    return np.array([[np.cos(theta),np.sin(theta),0],[-np.sin(theta),np.cos(theta),0],[0,0,1]])
 
 def start_game():
     """ Starts pygame modules and creates a surface for the game.
@@ -151,10 +156,15 @@ def end_game():
     pg.display.quit()
 
 def main():
+    pg.mixer.init()
+    pg.mixer.music.load('song.mp3')
+    pg.mixer.music.set_volume(0.2)
+    pg.mixer.music.play()
     surface = start_game()
 
     clock = pg.time.Clock()
-
+    plat_time = 0
+    plat_vec = (0,20,0)
     #Obstacle
     vertices_1 = ((1, 0, 0), (0, 1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, -1))
     triangles_1 = ((0,1,2), (1,3,2), (3,4,2), (4,0,2), (0,5,1), (1,5,3), (3,5,4), (4,5,0))
@@ -175,9 +185,9 @@ def main():
     platform2 = Obstacle(mesh_4, (7, 6, -3), (10, 10, 2), True)
     
     player = Player(2, 15, 100, mesh_3)
-    testing_bodies = [wall, platform1, platform2, spike, player]
+    plat_list = [platform1]
 
-    main_space = Space(testing_bodies)
+    main_space = Space(plat_list)
 
     PLAYER_SPRITE = pg.Surface.convert_alpha(pg.image.load("Lfant.png"))
 
@@ -244,6 +254,26 @@ def main():
                 elif e.key == 100:
                     direction[3] = 0
 
+        #Spawn new platforms
+        plat_time += delta_time
+
+        if plat_time >= 1:
+            plat_time -= 1
+            angle = np.radians(np.random.uniform(0,90)-45)
+            if np.random.rand() > 0.9:
+                sign = np.random.choice([1,-1])
+                plat_vec = rotation(np.radians(sign*90)) @ plat_vec
+                angle = np.radians(-sign*45)
+                print('turned')
+            old_pos = main_space.bodies[-1].get_position()
+            new_pos = old_pos + rotation(angle) @ plat_vec
+            new_plat = copy.copy(np.random.choice([platform1]))
+            new_plat.set_position(new_pos)
+            plat_list.append(new_plat)
+            main_space.add_bodies([new_plat])
+        if len(main_space.bodies) == 6:
+            del main_space.bodies[0]
+            
         #Camera work
         mouse_rel = pg.mouse.get_rel()
         camera_rot = np.array([-mouse_rel[0],
@@ -284,6 +314,7 @@ def main():
         else:
             player.apply_heal(1)
 
+        player.able_to_jump = False
         for i in main_space.bodies:
             if type(i) == Obstacle:
                 colliding(i, player, main_space)

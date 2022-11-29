@@ -227,7 +227,6 @@ def draw_flat_shade(surface, triangles, light_direction):
             pg.draw.aalines(surface, (shade/4, shade/4, shade/4), points=tri[:,:2].tolist(), closed=True)
 
         elif isinstance(tri, pg.Surface):
-            print("drawing player")
             w = tri.get_width()
             h = tri.get_height()
             surface.blit(tri, [(SCREEN_WIDTH - w)/2, (SCREEN_HEIGHT - h)/2])
