@@ -5,7 +5,7 @@ import pygame as pg
 import numpy as np
 from math import pi
 
-CAMERA_SPEED = 20
+PLAYER_SPEED = 10
 CAMERA_DISTANCE = 15
 GRAVITY = 40
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
@@ -40,7 +40,7 @@ class Health_bar(pg.sprite.Sprite):
         pg.draw.rect(surface, (255,255,255),(10,10,self.health_bar_length,25),4)
 
 class Player(Body):
-    def __init__(self, size, strength, health, mesh):
+    def __init__(self, size, strength, health, mesh=None):
         #super().__init__(mesh=mesh)
         super().__init__(mesh="Lfant.png")
 
@@ -74,7 +74,8 @@ class Player(Body):
         self.hp_bar.sprite.apply_heal(amount)
 
 class Obstacle(Body):
-    def __init__(self, mesh=None, position=(0, 0, 0), hitbox_size=None, solid=False):
+    def __init__(self, mesh=None, position=(0, 0, 0), hitbox_size=None, solid=False, timer=10):
+        self.timer = timer
         self.hitbox_size = np.array(hitbox_size, dtype=float)
         self.solid = solid
         super().__init__(mesh, position)
@@ -163,31 +164,21 @@ def main():
     surface = start_game()
 
     clock = pg.time.Clock()
-    plat_time = 0
     plat_vec = (0,20,0)
+
     #Obstacle
     vertices_1 = ((1, 0, 0), (0, 1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, -1))
     triangles_1 = ((0,1,2), (1,3,2), (3,4,2), (4,0,2), (0,5,1), (1,5,3), (3,5,4), (4,5,0))
     mesh_1 = Mesh(vertices_1, triangles_1)
     
-    #Obstacle
-    #vertices_2 = ((1,1,2), (1,1,-2), (1,-1,2), (1,-1,-2), (-1,1,2), (-1,1,-2), (-1,-1,2), (-1,-1,-2))
-    #triangles_2 = ((2,1,0),(1,2,3),(0,1,4),(5,4,1),(4,7,6),(7,4,5),(6,7,2),(3,2,7),(4,2,0),(2,4,6))
-    #mesh_3 = Mesh(vertices_2, triangles_2)
-
-    mesh_2 = PlatMesh(4, 3, 2)
-    mesh_3 = PlatMesh(2, 2, 2)
-    mesh_4 = PlatMesh(10, 10, 2)
+    mesh_plat = PlatMesh(5, 5, 4)
     
-    spike = Obstacle(mesh_1, (5,5,0), (2,2,1), False)
-    wall = Obstacle(mesh_2, (10,5,0), (4,3,2), True)
-    platform1 = Obstacle(mesh_4, (0, 0, -5), (10, 10, 2), True)
-    platform2 = Obstacle(mesh_4, (7, 6, -3), (10, 10, 2), True)
+    platform1 = Obstacle(mesh_plat, (0, 0, -5), (5, 5, 4), True)
     
-    player = Player(2, 15, 100, mesh_3)
-    plat_list = [platform1]
+    player = Player(2, 15, 100)
+    bodies = [player, platform1]
 
-    main_space = Space(plat_list)
+    main_space = Space(bodies, 1)
 
     PLAYER_SPRITE = pg.Surface.convert_alpha(pg.image.load("Lfant.png"))
 
@@ -254,26 +245,27 @@ def main():
                 elif e.key == 100:
                     direction[3] = 0
 
-        #Spawn new platforms
-        plat_time += delta_time
+        #Platform timer stuff
+        for platform in reversed(main_space.bodies):
+            if isinstance(platform, Obstacle):
+                platform.timer -= delta_time
 
-        if plat_time >= 1:
-            plat_time -= 1
+                if platform.timer < 0:
+                    main_space.remove_body(platform)
+
+        if main_space.countdown_platform(delta_time):
             angle = np.radians(np.random.uniform(0,90)-45)
+
             if np.random.rand() > 0.9:
                 sign = np.random.choice([1,-1])
                 plat_vec = rotation(np.radians(sign*90)) @ plat_vec
                 angle = np.radians(-sign*45)
-                print('turned')
+
             old_pos = main_space.bodies[-1].get_position()
             new_pos = old_pos + rotation(angle) @ plat_vec
-            new_plat = copy.copy(np.random.choice([platform1]))
-            new_plat.set_position(new_pos)
-            plat_list.append(new_plat)
-            main_space.add_bodies([new_plat])
-        if len(main_space.bodies) == 6:
-            del main_space.bodies[0]
-            
+
+            main_space.add_bodies((Obstacle(mesh_plat, new_pos, (5, 5, 4), True, 3),))
+
         #Camera work
         mouse_rel = pg.mouse.get_rel()
         camera_rot = np.array([-mouse_rel[0],
@@ -283,11 +275,15 @@ def main():
 
         displacement = np.array([(direction[0] - direction[2])*player.camera.costhe + (direction[3] - direction[1])*player.camera.sinthe,
                                  (direction[0] - direction[2])*player.camera.sinthe - (direction[3] - direction[1])*player.camera.costhe,
-                                 0])*delta_time*CAMERA_SPEED        
+                                 0])*delta_time*PLAYER_SPEED
+
+        displacement_norm = np.linalg.norm(displacement, ord=2)
+        if displacement_norm == 0:
+            displacement_norm = 1
 
         for i in main_space.bodies:
             if type(i) == Obstacle:
-                i.set_position(i.get_position() - displacement)
+                i.set_position(i.get_position() - displacement/displacement_norm)
 
         camera_pos = np.array([-CAMERA_DISTANCE*player.camera.cosphi*player.camera.costhe,
                                -CAMERA_DISTANCE*player.camera.cosphi*player.camera.sinthe,

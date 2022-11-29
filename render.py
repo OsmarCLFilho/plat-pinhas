@@ -2,7 +2,6 @@ import pygame as pg
 import numpy as np
 from math import sin, cos, pi, tan
 
-CAMERA_SPEED = 10
 GRAVITY = 6.5
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
 SCREEN_RATIO = SCREEN_WIDTH/SCREEN_HEIGHT
@@ -137,9 +136,11 @@ class Body:
 
 #Render package
 class Space:
-    def __init__(self, bodies=[]):
+    def __init__(self, bodies=[], plat_spawn_timer=5):
         self.bodies = []
         self.bodies.extend(bodies)
+        self.plat_spawn_timer = plat_spawn_timer
+        self.current_spawn_timer = plat_spawn_timer
 
     def add_bodies(self, bodies):
         self.bodies.extend(bodies)
@@ -147,7 +148,12 @@ class Space:
     def remove_body(self, body):
         self.bodies.remove(body)
 
-                
+    def countdown_platform(self, delta_time):
+        self.current_spawn_timer -= delta_time
+
+        if self.current_spawn_timer < 0:
+            self.current_spawn_timer += self.plat_spawn_timer
+            return True
 
 #Render package
 def project_triangle(vertices, camera):
@@ -207,7 +213,8 @@ def project_space(space, camera, ps):
                     #Bad life choices right here, change this later, add a triangle class or whatever
                     drawable_trigs.append(np.column_stack((projection, mesh.normals[index])))
 
-    drawable_trigs.append(player_sprite)
+        elif isinstance(mesh, str):
+            drawable_trigs.append(player_sprite)
 
     return drawable_trigs
 
