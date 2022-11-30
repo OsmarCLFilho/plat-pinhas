@@ -1,25 +1,11 @@
 import pygame  
 import sys  
-  
-  
-pygame.init()  
-res = (720,720)  
-screen = pygame.display.set_mode(res)  
-color = (46,52,64)  
-color_light = (170,170,170)  
-color_dark = (100,100,100)  
-width = screen.get_width()  
-height = screen.get_height()   
-smallfont = pygame.font.SysFont("Arial Black", 40)  
-text = smallfont.render('start' , True , color)  
-text2 = smallfont.render('sair' , True , color)  
-
-run = True
 
 class Btn () :
-    def __init__(self, texto, action):
+    def __init__(self, texto, action, color):
+        self.font = pygame.font.SysFont("Arial Black", 40)
         self.conteudo_texto = texto
-        self.texto = smallfont.render(texto, True, color)
+        self.texto = self.font.render(texto, True, color)
         self.ret_text = self.texto.get_rect()
         self.acao = action
 
@@ -34,44 +20,63 @@ class Btn () :
     def click(self, coordenada):
         if self.x + self.largura >= coordenada[0] >= self.x and self.y + self.altura >= coordenada[1] >= self.y:
             print("clickou" + self.conteudo_texto)
-            if self.acao == "sair":  
-                global run
-                run = False 
+            if self.acao == "sair":
+                return True
 
-while run:  
-    screen.fill((60,25,60))  
+class Menu():
+    def __init__(self, btns, cx, cy, darkc, lightc):
+        self.botoes = btns
+        self.running = False
+        self.coord_x = cx
+        self.coord_y = cy
+        self.color_dark = darkc
+        self.color_light = lightc
+
+    def end(self):
+        self.running = False
+
+    def draw_buttons(self):
+        for i in range(len(self.botoes)):
+                    self.botoes[i].draw((self.coord_x, self.coord_y + i * 100), self.color_dark)
+                    
+                    x_btn, btn_largura = self.botoes[i].x, self.botoes[i].largura
+                    y_btn, btn_altura = self.botoes[i].y, self.botoes[i].altura
+
+                    if  x_btn + btn_largura >= self.mouse[0] >= x_btn and y_btn + btn_altura >= self.mouse[1] >= y_btn:
+                        self.botoes[i].draw((self.coord_x, self.coord_y + i * 100), self.color_light)  
+
+    def check_clicks(self):
+        for ev in pygame.event.get():  
+            if ev.type == pygame.QUIT:  
+                self.running = False  
+                
+            if ev.type == pygame.MOUSEBUTTONDOWN:  
+                for btn in self.botoes:
+                    if btn.click(self.mouse):
+                        self.running = False
+
+    def start(self):
+        self.running = True
+
+        while self.running:
+            screen.fill((60,25,60))  
       
-    mouse = pygame.mouse.get_pos()  
+            self.mouse = pygame.mouse.get_pos()
 
-    lista_botoes = []
+            self.draw_buttons()
+            self.check_clicks()
 
-    btn_start = Btn("Start", "comecar")
-    btn_exit = Btn("Exit", "sair")
-    btn_loja = Btn("Loja", "comprar")
+            pygame.display.flip() 
+    
+if __name__ == "__main__":
+    pygame.init()
 
-    lista_botoes.append(btn_start)
-    lista_botoes.append(btn_exit)
-    lista_botoes.append(btn_loja)
+    WIDTH = 720
+    HEIGHT = 720
+    res = (WIDTH, HEIGHT)
+    screen = pygame.display.set_mode(res)
+    menu = Menu(btns=(Btn("Start", "comecar",(46,52,64)), Btn("Exit", "sair",(46,52,64)), Btn("Loja", "comprar",(46,52,64))),
+                cx=WIDTH/2-53.5, cy=HEIGHT/2-28.5,
+                darkc=(100,100,100), lightc=(170,170,170))
 
-    coord_x, coord_y = width/2-53.5, height/2-28.5
-
-    for i in range(len(lista_botoes)):
-        lista_botoes[i].draw((coord_x, coord_y + i * 100), color_dark)
-        
-        x_btn, btn_largura = lista_botoes[i].x, lista_botoes[i].largura
-        y_btn, btn_altura = lista_botoes[i].y, lista_botoes[i].altura
-
-        if  x_btn + btn_largura >= mouse[0] >= x_btn and y_btn + btn_altura >= mouse[1] >= y_btn:
-            lista_botoes[i].draw((coord_x, coord_y + i * 100), color_light)  
-            
-
-    for ev in pygame.event.get():  
-        if ev.type == pygame.QUIT:  
-            run = False  
-            
-        if ev.type == pygame.MOUSEBUTTONDOWN:  
-            for btn in lista_botoes:
-
-                btn.click(mouse)
-
-    pygame.display.update() 
+    menu.start()
