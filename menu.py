@@ -71,6 +71,7 @@ while run:
             
         if ev.type == pygame.MOUSEBUTTONDOWN:  
             for btn in lista_botoes:
+
                 btn.click(mouse)
 
     pygame.display.update() 
