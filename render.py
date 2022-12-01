@@ -184,8 +184,7 @@ def project_triangle(vertices, camera):
     return V[:,1:]
 
 #Render package
-def project_space(space, camera, ps):
-    player_sprite = ps
+def project_space(space, camera, player_sprite):
     drawable_trigs = []
     for body in sorted(space.bodies, key=lambda b: np.linalg.norm((b.position - camera.position), ord=1), reverse=True):
         mesh = body.mesh
@@ -214,7 +213,9 @@ def project_space(space, camera, ps):
                     drawable_trigs.append(np.column_stack((projection, mesh.normals[index])))
 
         elif isinstance(mesh, str):
-            drawable_trigs.append(player_sprite)
+            scale = camera.cosphi
+            player_sprite = pg.transform.scale(player_sprite, [player_sprite.get_rect()[2], player_sprite.get_rect()[3]*scale])
+            drawable_trigs.append(pg.Surface.convert_alpha(player_sprite))
 
     return drawable_trigs
 

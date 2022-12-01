@@ -180,7 +180,8 @@ def main():
 
     main_space = Space(bodies, 1)
 
-    PLAYER_SPRITE = pg.Surface.convert_alpha(pg.image.load("Lfant.png"))
+    PLAYER_SPRITE = pg.image.load("Lfant.png")
+    PLAYER_SPRITE = pg.transform.scale(PLAYER_SPRITE, np.array(PLAYER_SPRITE.get_rect()[2:])/1.6)
 
     game_running = True
     clock.tick()
