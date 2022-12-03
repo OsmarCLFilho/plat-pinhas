@@ -274,6 +274,9 @@ class Game:
             pg.display.flip()
             self.surface.fill((0, 0, 0))
 
+        pg.mouse.set_visible(True)
+        pg.event.set_grab(False)
+
 if __name__ == "__main__":
     pg.display.init()
     pg.mixer.init()
