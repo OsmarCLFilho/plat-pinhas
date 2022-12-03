@@ -79,7 +79,7 @@ class Obstacle(Body):
         self.hitbox_size = np.array(hitbox_size, dtype=float)
         self.solid = solid
         super().__init__(mesh, position)
-        
+
 def colliding(body, player, space):
     l, w, h = (body.hitbox_size + player.size)/2
     body_pos = body.get_position()
@@ -113,223 +113,185 @@ def colliding(body, player, space):
                     player.able_to_jump = True
                 player.vertical_speed = 0
 
-            #if abs(y/x) < w/l:
-                #for i in space.bodies:
-                    #if type(i) == Obstacle:
-                        #vec = body_pos - i.get_position()
-                        #i.set_position(i.get_position() + vec)
-                        #i.set_posx(-np.sign(x)*l)
-                        #i.set_position(i.get_position() - vec)
-
-            #if abs(y/x) >= w/l:
-                #for i in space.bodies:
-                    #if type(i) == Obstacle:
-                        #vec = body_pos - i.get_position()
-                        #i.set_position(i.get_position() + vec)
-                        #i.set_posy(-np.sign(y)*w)
-                        #i.set_position(i.get_position() - vec)
-
 def rotation(theta):
     return np.array([[np.cos(theta),np.sin(theta),0],[-np.sin(theta),np.cos(theta),0],[0,0,1]])
 
-def start_game():
-    """ Starts pygame modules and creates a surface for the game.
+class Meshes:
+    plat_mesh = PlatMesh(5, 5, 4)
 
-    :return: Pygame surface used by the game
-    :rtype: pygame.Surface
-    """
+class Game:
+    def __init__(self, surface):
+        self.surface = surface
 
-    print("Starting game")
-    pg.display.init()
-    surface = pg.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT))
+        self.player = Player(2, 15, 100)
+        
+        first_platform = Obstacle(Meshes.plat_mesh, (0, 0, -5), (5, 5, 4), True)
+        bodies = [self.player, first_platform]
 
-    print("Display init:", pg.display.get_init())
-    print("Display set mode:", pg.display.get_active())
+        self.space = Space(bodies, plat_spawn_timer=1)
 
-    return surface
+        self.game_running = False
 
-def end_game():
-    """ Quits all pygame modules
+    def start_game(self):
+        direction = [0, 0, 0, 0]
+        pg.event.set_grab(True)
+        pg.mouse.set_visible(False)
+        pg.mouse.get_rel()
 
-    :rtype: None
-    """
-    print("Ending game")
-    pg.display.quit()
+        plat_vec = (0,20,0)
+
+        PLAYER_SPRITE = pg.image.load("Lfant.png")
+        PLAYER_SPRITE = pg.transform.scale(PLAYER_SPRITE, np.array(PLAYER_SPRITE.get_rect()[2:])/1.2)
+
+        self.game_running = True
+
+        clock = pg.time.Clock()
+        clock.tick()
+
+        while self.game_running:
+            #Events stuff
+            clock.tick(30)
+            delta_time = clock.get_time()/1000
+
+            if pg.event.peek(eventtype=pg.QUIT, pump=True):
+                self.game_running = False
+
+            events = pg.event.get(pump=True)
+
+            for e in events:
+                if e.type == pg.KEYDOWN:
+                    #key w
+                    if e.key == 119:
+                        direction[0] = 1
+
+                    #key a
+                    elif e.key == 97:
+                        direction[1] = 1
+
+                    #key s
+                    elif e.key == 115:
+                        direction[2] = 1
+
+                    #key d
+                    elif e.key == 100:
+                        direction[3] = 1
+
+                    #key space
+                    elif e.key == 32:
+                        self.player.jump()
+
+                    #esc
+                    elif e.key == 27:
+                        self.game_running = False
+
+                elif e.type == pg.KEYUP:
+                    #key w
+                    if e.key == 119:
+                        direction[0] = 0
+
+                    #key a
+                    elif e.key == 97:
+                        direction[1] = 0
+
+                    #key s
+                    elif e.key == 115:
+                        direction[2] = 0
+
+                    #key d
+                    elif e.key == 100:
+                        direction[3] = 0
+
+            #Platform timer stuff
+            for platform in reversed(self.space.bodies):
+                if isinstance(platform, Obstacle):
+                    platform.timer -= delta_time
+
+                    if platform.timer < 0:
+                        self.space.remove_body(platform)
+
+            if self.space.countdown_platform(delta_time):
+                angle = np.radians(np.random.uniform(0,90)-45)
+
+                if np.random.rand() > 0.9:
+                    sign = np.random.choice([1,-1])
+                    plat_vec = rotation(np.radians(sign*90)) @ plat_vec
+                    angle = np.radians(-sign*45)
+
+                old_pos = self.space.bodies[-1].get_position()
+                new_pos = old_pos + rotation(angle) @ plat_vec
+
+                self.space.add_bodies((Obstacle(Meshes.plat_mesh, new_pos, (5, 5, 4), True, 3),))
+
+            #Camera work
+            mouse_rel = pg.mouse.get_rel()
+            camera_rot = np.array([-mouse_rel[0],
+                                   -mouse_rel[1]])*delta_time*MOUSE_SENSITIVITY
+
+            self.player.camera.set_rotation(self.player.camera.get_rotation() + camera_rot)
+
+            displacement = np.array([(direction[0] - direction[2])*self.player.camera.costhe + (direction[3] - direction[1])*self.player.camera.sinthe,
+                                     (direction[0] - direction[2])*self.player.camera.sinthe - (direction[3] - direction[1])*self.player.camera.costhe,
+                                     0])*delta_time*PLAYER_SPEED
+
+            displacement_norm = np.linalg.norm(displacement, ord=2)
+            if displacement_norm == 0:
+                displacement_norm = 1
+
+            for i in self.space.bodies:
+                if type(i) == Obstacle:
+                    i.set_position(i.get_position() - displacement/displacement_norm)
+
+            camera_pos = np.array([-CAMERA_DISTANCE*self.player.camera.cosphi*self.player.camera.costhe,
+                                   -CAMERA_DISTANCE*self.player.camera.cosphi*self.player.camera.sinthe,
+                                   -CAMERA_DISTANCE*self.player.camera.sinphi])
+
+            self.player.camera.set_position(self.player.get_position() + camera_pos)
+
+            self.player.gravity_step(delta_time)
+
+            if self.player.iframes:
+                self.player.iframes -= 1
+
+            if self.player.healing:
+                self.player.healing -= 1
+            else:
+                self.player.apply_heal(1)
+
+            self.player.able_to_jump = False
+            for i in self.space.bodies:
+                if type(i) == Obstacle:
+                    colliding(i, self.player, self.space)
+
+            if self.player.dead():
+                game_running = False
+
+            #Render stuff
+            light_source = np.array((1,1,1))
+            light_source = light_source/np.linalg.norm(light_source, ord=2)
+
+            #draw_wireframes(surface, project_space(self.space, camera))
+            rnr.draw_flat_shade(self.surface, rnr.project_space(self.space, self.player.camera, PLAYER_SPRITE), light_source)
+            self.player.hp_bar.update(self.surface)
+
+            pg.display.flip()
+            self.surface.fill((0, 0, 0))
 
 def main():
-    pg.mixer.init()
+    surface = pg.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT))
+    game = Game(surface=surface)
+
     pg.mixer.music.load('song.mp3')
     pg.mixer.music.set_volume(0.2)
     pg.mixer.music.play()
-    surface = start_game()
-
-    clock = pg.time.Clock()
-    plat_vec = (0,20,0)
-
-    #Obstacle
-    vertices_1 = ((1, 0, 0), (0, 1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, -1))
-    triangles_1 = ((0,1,2), (1,3,2), (3,4,2), (4,0,2), (0,5,1), (1,5,3), (3,5,4), (4,5,0))
-    mesh_1 = Mesh(vertices_1, triangles_1)
-    
-    mesh_plat = PlatMesh(5, 5, 4)
-    
-    platform1 = Obstacle(mesh_plat, (0, 0, -5), (5, 5, 4), True)
-    
-    player = Player(2, 15, 100)
-    bodies = [player, platform1]
-
-    main_space = Space(bodies, 1)
-
-    PLAYER_SPRITE = pg.Surface.convert_alpha(pg.image.load("Lfant.png"))
-
-    game_running = True
-    clock.tick()
-
+   
     #game loop
-    direction = [0, 0, 0, 0]
-    pg.event.set_grab(True)
-    pg.mouse.set_visible(False)
-    pg.mouse.get_rel()
+    game.start_game()
 
-
-    while game_running:
-        #Events stuff
-        clock.tick(30)
-        delta_time = clock.get_time()/1000
-
-        if pg.event.peek(eventtype=pg.QUIT, pump=True):
-            game_running = False
-
-        events = pg.event.get(pump=True)
-
-        for e in events:
-            if e.type == pg.KEYDOWN:
-                #key w
-                if e.key == 119:
-                    direction[0] = 1
-
-                #key a
-                elif e.key == 97:
-                    direction[1] = 1
-
-                #key s
-                elif e.key == 115:
-                    direction[2] = 1
-
-                #key d
-                elif e.key == 100:
-                    direction[3] = 1
-
-                #key space
-                elif e.key == 32:
-                    player.jump()
-
-                #esc
-                elif e.key == 27:
-                    game_running = False
-
-            elif e.type == pg.KEYUP:
-                #key w
-                if e.key == 119:
-                    direction[0] = 0
-
-                #key a
-                elif e.key == 97:
-                    direction[1] = 0
-
-                #key s
-                elif e.key == 115:
-                    direction[2] = 0
-
-                #key d
-                elif e.key == 100:
-                    direction[3] = 0
-
-        #Platform timer stuff
-        for platform in reversed(main_space.bodies):
-            if isinstance(platform, Obstacle):
-                platform.timer -= delta_time
-
-                if platform.timer < 0:
-                    main_space.remove_body(platform)
-
-        if main_space.countdown_platform(delta_time):
-            angle = np.radians(np.random.uniform(0,90)-45)
-
-            if np.random.rand() > 0.9:
-                sign = np.random.choice([1,-1])
-                plat_vec = rotation(np.radians(sign*90)) @ plat_vec
-                angle = np.radians(-sign*45)
-
-            old_pos = main_space.bodies[-1].get_position()
-            new_pos = old_pos + rotation(angle) @ plat_vec
-
-            main_space.add_bodies((Obstacle(mesh_plat, new_pos, (5, 5, 4), True, 3),))
-
-        #Camera work
-        mouse_rel = pg.mouse.get_rel()
-        camera_rot = np.array([-mouse_rel[0],
-                               -mouse_rel[1]])*delta_time*MOUSE_SENSITIVITY
-
-        player.camera.set_rotation(player.camera.get_rotation() + camera_rot)
-
-        displacement = np.array([(direction[0] - direction[2])*player.camera.costhe + (direction[3] - direction[1])*player.camera.sinthe,
-                                 (direction[0] - direction[2])*player.camera.sinthe - (direction[3] - direction[1])*player.camera.costhe,
-                                 0])*delta_time*PLAYER_SPEED
-
-        displacement_norm = np.linalg.norm(displacement, ord=2)
-        if displacement_norm == 0:
-            displacement_norm = 1
-
-        for i in main_space.bodies:
-            if type(i) == Obstacle:
-                i.set_position(i.get_position() - displacement/displacement_norm)
-
-        camera_pos = np.array([-CAMERA_DISTANCE*player.camera.cosphi*player.camera.costhe,
-                               -CAMERA_DISTANCE*player.camera.cosphi*player.camera.sinthe,
-                               -CAMERA_DISTANCE*player.camera.sinphi])
-
-        player.camera.set_position(player.get_position() + camera_pos)
-
-        #Camera stuff done
-
-        #if jumping:
-            #jump_time += delta_time
-            #player.gravity_step(jump_time)
-            #if player.get_position()[2] == 0:
-                #jump_time = 0
-                #jumping = 0
-
-        player.gravity_step(delta_time)
-
-        if player.iframes:
-            player.iframes -= 1
-
-        if player.healing:
-            player.healing -= 1
-        else:
-            player.apply_heal(1)
-
-        player.able_to_jump = False
-        for i in main_space.bodies:
-            if type(i) == Obstacle:
-                colliding(i, player, main_space)
-
-        if player.dead():
-            game_running = False
-
-        #Render stuff
-        light_source = np.array((1,1,1))
-        light_source = light_source/np.linalg.norm(light_source, ord=2)
-
-        #draw_wireframes(surface, project_space(main_space, camera))
-        rnr.draw_flat_shade(surface, rnr.project_space(main_space, player.camera, PLAYER_SPRITE), light_source)
-        player.hp_bar.update(surface)
-
-        pg.display.flip()
-        surface.fill((0, 0, 0))
-
-    end_game()
+    pg.display.quit()
+    pg.mixer.quit()
 
 if __name__ == "__main__":
+    pg.display.init()
+    pg.mixer.init()
+
     main()
