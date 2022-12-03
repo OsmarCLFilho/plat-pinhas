@@ -7,7 +7,7 @@ from math import pi
 
 PLAYER_SPEED = 10
 CAMERA_DISTANCE = 15
-GRAVITY = 40
+GRAVITY = 80
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
 SCREEN_RATIO = SCREEN_WIDTH/SCREEN_HEIGHT
 MOUSE_SENSITIVITY = 0.1
@@ -58,7 +58,7 @@ class Player(Body):
 
     def gravity_step(self, t):
         self.vertical_speed = self.vertical_speed - GRAVITY*t
-        self.set_posz(self.get_position()[2] + t*(self.vertical_speed))
+        self.set_posz( t*(self.vertical_speed))
 
     def jump(self):
         if self.able_to_jump:
@@ -74,13 +74,25 @@ class Player(Body):
         self.hp_bar.sprite.apply_heal(amount)
 
 class Obstacle(Body):
-    def __init__(self, mesh=None, position=(0, 0, 0), hitbox_size=None, solid=False, timer=10):
+    def __init__(self, mesh=None, position=(0, 0, 0), hitbox_size=None, solid=False, timer=10, move_type=0):
         self.timer = timer
         self.hitbox_size = np.array(hitbox_size, dtype=float)
         self.solid = solid
+        self.move_type = move_type
         super().__init__(mesh, position)
-        
+
+    def move(self):
+        if type(self.move_type) == int:
+            pass
+        else:
+            if np.linalg.norm(self.get_position() - self.start_pos) >= 10:
+                self.move_type *= -1
+            self.set_body_position(0.5*self.move_type)
+            return 0.5*self.move_type
+        return (0,0,0)
+
 def colliding(body, player, space):
+    ontop = False
     l, w, h = (body.hitbox_size + player.size)/2
     body_pos = body.get_position()
     x, y, z = player.get_position() - body_pos
@@ -91,43 +103,27 @@ def colliding(body, player, space):
             player.apply_damage(20)
 
         elif body.solid:
+            player.able_to_jump = True
+            ontop = True
             if l - abs(x) < w - abs(y):
                 if l - abs(x) < h - abs(z):
                     for b in space.bodies:
                         if type(b) == Obstacle:
-                            b.set_posx(b.get_position()[0] - np.sign(x)*(l-abs(x)))
+                            b.set_posx(np.sign(x)*(l-abs(x)))
 
                 else:
-                    player.set_posz(player.get_position()[2] + np.sign(z)*(h-abs(z)))
-                    player.able_to_jump = True
+                    player.set_posz(np.sign(z)*(h-abs(z)))
                     player.vertical_speed = 0
 
             elif l - abs(x) < h - abs(z) or w - abs(y) < h - abs(z):
                 for b in space.bodies:
                     if type(b) == Obstacle:
-                        b.set_posy(b.get_position()[1] - np.sign(y)*(w-abs(y)))
+                        b.set_posy(np.sign(y)*(w-abs(y)))
 
             else:
-                player.set_posz(player.get_position()[2] + np.sign(z)*(h-abs(z)))
-                if np.sign(z) == 1:
-                    player.able_to_jump = True
+                player.set_posz(np.sign(z)*(h-abs(z)))
                 player.vertical_speed = 0
-
-            #if abs(y/x) < w/l:
-                #for i in space.bodies:
-                    #if type(i) == Obstacle:
-                        #vec = body_pos - i.get_position()
-                        #i.set_position(i.get_position() + vec)
-                        #i.set_posx(-np.sign(x)*l)
-                        #i.set_position(i.get_position() - vec)
-
-            #if abs(y/x) >= w/l:
-                #for i in space.bodies:
-                    #if type(i) == Obstacle:
-                        #vec = body_pos - i.get_position()
-                        #i.set_position(i.get_position() + vec)
-                        #i.set_posy(-np.sign(y)*w)
-                        #i.set_position(i.get_position() - vec)
+    return ontop
 
 def rotation(theta):
     return np.array([[np.cos(theta),np.sin(theta),0],[-np.sin(theta),np.cos(theta),0],[0,0,1]])
@@ -165,6 +161,7 @@ def main():
 
     clock = pg.time.Clock()
     plat_vec = (0,20,0)
+    turn_cooldown = 0
 
     #Obstacle
     vertices_1 = ((1, 0, 0), (0, 1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, -1))
@@ -172,17 +169,19 @@ def main():
     mesh_1 = Mesh(vertices_1, triangles_1)
     
     mesh_plat = PlatMesh(5, 5, 4)
+    mesh_plat2 = PlatMesh(10, 10, 4)
+    mesh_plat3 = PlatMesh(10, 10, 12)
     
     platform1 = Obstacle(mesh_plat, (0, 0, -5), (5, 5, 4), True)
-    
-    player = Player(2, 15, 100)
+
+    player = Player(2, 30, 100)
     bodies = [player, platform1]
 
     main_space = Space(bodies, 1)
 
     PLAYER_SPRITE = pg.image.load("Lfant.png")
     PLAYER_SPRITE = pg.transform.scale(PLAYER_SPRITE, np.array(PLAYER_SPRITE.get_rect()[2:])/1.6)
-
+    
     game_running = True
     clock.tick()
 
@@ -257,15 +256,33 @@ def main():
         if main_space.countdown_platform(delta_time):
             angle = np.radians(np.random.uniform(0,90)-45)
 
-            if np.random.rand() > 0.9:
-                sign = np.random.choice([1,-1])
-                plat_vec = rotation(np.radians(sign*90)) @ plat_vec
-                angle = np.radians(-sign*45)
+            sign = np.random.choice([1,-1])
+            if not turn_cooldown:
+                if np.random.rand() > 0.9:
+                    plat_vec = rotation(np.radians(sign*90)) @ plat_vec
+                    angle = np.radians(-sign*45)
+                    turn_cooldown += 2
+            else:
+                turn_cooldown -= 1
+
+            plat_vec_perp = rotation(np.radians(90))@plat_vec
 
             old_pos = main_space.bodies[-1].get_position()
             new_pos = old_pos + rotation(angle) @ plat_vec
 
-            main_space.add_bodies((Obstacle(mesh_plat, new_pos, (5, 5, 4), True, 3),))
+            h = np.random.choice([0,4,-4])
+            move = 0
+            if np.random.rand() < 0.2:
+                move = plat_vec_perp/np.linalg.norm(plat_vec)
+
+            if np.random.rand() < 0.8:
+                if type(move) != int:
+                    main_space.add_bodies((Obstacle(mesh_1, new_pos + (0,0,h) + plat_vec_perp, (0, 0, 0), False, 10),))
+                    main_space.add_bodies((Obstacle(mesh_1, new_pos + (0,0,h) - plat_vec_perp, (0, 0, 0), False, 10),))
+                main_space.add_bodies((Obstacle(mesh_plat2, new_pos + (0,0,h), (10, 10, 4), True, 10, move),))
+            else:
+                main_space.add_bodies((Obstacle(mesh_plat3, new_pos + (0,0,8), (10, 10, 12), True, 10),))
+                main_space.add_bodies((Obstacle(None, new_pos + (0,0,12), (0,0,0), True, 10),))
 
         #Camera work
         mouse_rel = pg.mouse.get_rel()
@@ -281,10 +298,21 @@ def main():
         displacement_norm = np.linalg.norm(displacement, ord=2)
         if displacement_norm == 0:
             displacement_norm = 1
+        displacement = displacement/displacement_norm
+
+        player.gravity_step(delta_time)
+
+        player.able_to_jump = False
+        for i in main_space.bodies:
+            if type(i) == Obstacle:
+                ontop = colliding(i, player, main_space)
+                move = i.move()
+                if ontop:
+                    displacement += move
 
         for i in main_space.bodies:
             if type(i) == Obstacle:
-                i.set_position(i.get_position() - displacement/displacement_norm)
+                i.set_position(displacement)
 
         camera_pos = np.array([-CAMERA_DISTANCE*player.camera.cosphi*player.camera.costhe,
                                -CAMERA_DISTANCE*player.camera.cosphi*player.camera.sinthe,
@@ -294,15 +322,6 @@ def main():
 
         #Camera stuff done
 
-        #if jumping:
-            #jump_time += delta_time
-            #player.gravity_step(jump_time)
-            #if player.get_position()[2] == 0:
-                #jump_time = 0
-                #jumping = 0
-
-        player.gravity_step(delta_time)
-
         if player.iframes:
             player.iframes -= 1
 
@@ -310,11 +329,6 @@ def main():
             player.healing -= 1
         else:
             player.apply_heal(1)
-
-        player.able_to_jump = False
-        for i in main_space.bodies:
-            if type(i) == Obstacle:
-                colliding(i, player, main_space)
 
         if player.dead():
             game_running = False

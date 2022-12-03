@@ -118,21 +118,29 @@ class Body:
     def __init__(self, mesh=None, position=(0, 0, 0)):
         self.mesh = mesh
         self.position = np.array(position, dtype=float)
+        self.start_pos = np.array(position, dtype=float)
 
-    def set_position(self, position):
-        self.position = np.array(position, dtype=float)
+    def set_body_position(self, displacement):
+        self.position += np.array(displacement, dtype=float)
+
+    def set_position(self, displacement):
+        self.position -= np.array(displacement, dtype=float)
+        self.start_pos -= displacement
 
     def get_position(self):
         return self.position
     
-    def set_posx(self, x):
-        self.position[0] = x
+    def set_posx(self, dx):
+        self.position[0] -= dx
+        self.start_pos[0] -= dx
 
-    def set_posy(self, y):
-        self.position[1] = y
+    def set_posy(self, dy):
+        self.position[1] -= dy
+        self.start_pos[1] -= dy
 
-    def set_posz(self, z):
-        self.position[2] = z
+    def set_posz(self, dz):
+        self.position[2] += dz
+        self.start_pos[2] += dz
 
 #Render package
 class Space:
