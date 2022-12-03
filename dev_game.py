@@ -4,6 +4,7 @@ import copy
 import pygame as pg
 import numpy as np
 from math import pi
+from loja import Personagem as prs
 
 class Health_bar(pg.sprite.Sprite):
     def __init__(self, health):
@@ -33,9 +34,11 @@ class Health_bar(pg.sprite.Sprite):
         pg.draw.rect(surface, (255,255,255),(10,10,self.health_bar_length,25),4)
 
 class Player(Body):
-    def __init__(self, size, strength, health, mesh=None):
+    def __init__(self, size, strength, health, personagem):
         #super().__init__(mesh=mesh)
-        super().__init__(mesh="Lfant.png")
+        sprite = personagem.imagem_endereco
+        super().__init__(mesh="imagens/galinha.png")
+        #super().__init__(mesh="Lfant.png")
 
         self.size = size
         self.strength = strength
@@ -45,6 +48,7 @@ class Player(Body):
         self.camera = Camera()
         self.vertical_speed = 0
         self.able_to_jump = True
+
 
     def dead(self):
         return not bool(self.hp_bar.sprite.health)
@@ -121,8 +125,13 @@ class Game:
         self.GRAVITY = gravity
         self.MOUSE_SENSITIVITY = mouse_sensitivity
 
-        self.player = Player(size=2, strength=15, health=100)
-        
+        #---
+        galinha = pg.image.load("imagens/galinha.png")
+        gala = prs("Gala Galinha", ["50", "Consegue dar pulos duplos", True, galinha])
+
+        self.player = Player(size=2, strength=15, health=100, personagem = gala)
+        #---
+
         first_platform = Obstacle(Meshes.plat_mesh, (0, 0, -5), (5, 5, 4), True)
         bodies = [self.player, first_platform]
 
@@ -138,7 +147,12 @@ class Game:
 
         plat_vec = (0,20,0)
 
+        galinha = pg.image.load("imagens/galinha.png")
+        gala = prs("Gala Galinha", ["50", "Consegue dar pulos duplos", True, galinha])
+
+
         PLAYER_SPRITE = pg.image.load("Lfant.png")
+        PLAYER_SPRITE = galinha
         PLAYER_SPRITE = pg.transform.scale(PLAYER_SPRITE, np.array(PLAYER_SPRITE.get_rect()[2:])/1.2)
 
         self.game_running = True

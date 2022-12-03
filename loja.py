@@ -45,19 +45,18 @@ class Botao () :
         Args:
             texto (str): Texto do botão
             action (str): _description_
-            cor_botao_1 (tuple): Tupla contendo 3 numeros de 0 a 255,
-                                 informando as cores em RGB do botão
-            cor_botao_2 (tuple): Tupla contendo 3 numeros de 0 a 255,
-                                 informando as cores em RGB do botão        
-            cor_fonte (tuple): Tupla contendo 3 numeros de 0 a 255, 
-                               informando as cores em RGB da fonte
-            tela (pygame.Surface): Janela do botão
-            coordenada (tuple): Tupla contendo 2 inteiros 
-                                representandos as coordenadas do mouse
-            image ()
-
-        Returns:
-            _type_: _description_
+            tela (pygame.Surface):  Janela do botão
+            coordenada (tuple):     Tupla contendo 2 inteiros 
+                                    representandos as coordenadas do mouse
+            cor_botao_1 (tuple):    Tupla contendo 3 numeros de 0 a 255,
+                                    informando as cores em RGB do botão
+            cor_botao_2 (tuple):    Tupla contendo 3 numeros de 0 a 255,
+                                    informando as cores em RGB do botão        
+            cor_fonte (tuple):      Tupla contendo 3 numeros de 0 a 255, 
+                                    informando as cores em RGB da fonte
+            imagem (pygame.Surface):    Imagem do pygame, fundo do botão
+            imagem_2 (pygame.Surface):  Imagem do pygame, fundo do botão
+                                        quando o mouse passa por cima
         """
         self.__conteudo_texto = texto
         self.__acao = action
@@ -251,26 +250,25 @@ class Botao () :
 
         self.tela.blit(imagem,(x, y))
 
-        
-
-    
-
 
 class Personagem:
 
-    def __init__(self, nome, atributos = ["9999", "Não existe", False, pygame.image.load("imagens/error_char.png")]):
+    def __init__(self, nome, atributos = ["9999", "Não existe", False, "imagens/error_char.png"], selecionado = False):
         """Inicialização da classe
 
         Args:
-            nome (str): Nome do personagem
-            atributos (list): lista com os atributo do personagem: preco(str),
-                              descricao(str), comprado(bool) e imagem (Surface)
+            nome (str):         Nome do personagem
+            atributos (list):   Lista com os atributo do personagem: preco(str),
+                                descricao(str), comprado(bool), imagem (Surface)
+            selecionado (bool): Se o personagem selecionado ou não
         """
         self.__nome = nome
         self.__preco = atributos[0]
         self.__descricao = atributos[1]
         self.__comprado = atributos[2]
         self.__imagem = atributos[3]
+        self.__selecionado = selecionado
+
     
     @property
     def nome(self):
@@ -286,11 +284,19 @@ class Personagem:
 
     @property
     def imagem(self):
+        return pygame.image.load(self.__imagem)
+
+    @property
+    def imagem_endereco(self):
         return self.__imagem
 
     @property
     def comprado(self):
         return self.__comprado
+
+    @property
+    def selecionado(self):
+        return self.__selecionado
 
     def __str__(self):
         return self.nome
@@ -317,6 +323,11 @@ class Loja:
     def __len__(self):
         return len(self.personagens)
 
+    def selecionado(self):
+        for personagem in self.personagens:
+            if personagem.selecionado:
+                return personagem
+
     
     def exibir_loja(self):
         """Exibe a loja
@@ -340,17 +351,20 @@ class Loja:
             font_2 = pygame.font.Font('fonte/AGENTORANGE.TTF', 20)
             preto = (230,230,230)#(255, 255, 255)
             cinza = (200, 200, 200)
+            cinza_2 = (40, 40, 40)
+            branco = (0,0,0) # Eu sei que tá trocado
 
             # Escreve o nome do personagem
             nome = personagem.nome
             y_nome = y - 200
             escrever_centralizado(nome, font, preto, tela, x, y_nome)
 
+            # Moldura
             moldura = pygame.image.load("imagens/nuvem_moldura.png")       
             x_mold = x - moldura.get_width()/2
             y_mold = y - moldura.get_height()/2  
             tela.blit(moldura, (x_mold, y_mold))
-            #moldura.
+
             # Exibe a imagem do personagem
             imagem = personagem.imagem  
             x_imagem = x - imagem.get_width()/2
@@ -362,21 +376,26 @@ class Loja:
             y_descricao = y + 150
             escrever_centralizado(descricao, font_3, preto, tela, x, y_descricao)
 
+
             # Escreve o preço do personagem
             preco = personagem.preco
-            y_preco = y + 185
+            y_preco = y + 200
+
+            # Moldura 2
+            moldura_2 = pygame.image.load("imagens/cloud_4.png")
+            x_mold_2 = x - moldura_2.get_width()/2
+            tela.blit(moldura_2, (x_mold_2, y_preco-15))
+
             if not personagem.comprado:
-                escrever_centralizado(preco, font, preto, tela, x, y_preco)
+                escrever_centralizado(preco, font, cinza_2, tela, x, y_preco)
             else:
-                escrever_centralizado(preco, font, cinza, tela, x, y_preco)
+                escrever_centralizado(preco, font, branco, tela, x, y_preco)
 
 
         #----------------------------------------------------------------------------
         
         clock = pygame.time.Clock()
         rodando = True
-
-        ceu = pygame.image.load("imagens/ceu.png")
     
         index_per = 0
         tamanho_loja = len(self)
@@ -386,12 +405,16 @@ class Loja:
         x = self.tela.get_width()/2     
         y = self.tela.get_height()/2 -50
 
+        ceu = pygame.image.load("imagens/ceu.png")
         esquerda = pygame.image.load("imagens/esquerda.png")
         direita = pygame.image.load("imagens/direita.png")
         esquerda_2 = pygame.image.load("imagens/esquerda_2.png")
         direita_2 = pygame.image.load("imagens/direita_2.png")
         confirmar = pygame.image.load("imagens/V.png")
         cancelar = pygame.image.load("imagens/X.png")
+        nuvem = pygame.image.load("imagens/cloud_3.png")
+
+        rect_nuvem = nuvem.get_rect()
 
         #font_2 = pygame.font.SysFont("arialblack", 30)
         font_2 = pygame.font.Font('fonte/AGENTORANGE.TTF', 30)
@@ -409,15 +432,16 @@ class Loja:
         b_direita.altura = 0
 
         b_confirmar = Botao("Confirmar", "r", self.screen, (285, 610), cinza, cinza_2, preto, confirmar)
-        b_confirmar.largura = 80
-        b_confirmar.altura = 80
+        b_confirmar.largura = 60
+        b_confirmar.altura = 160
 
         b_cancelar = Botao("Cancelar", "r", self.screen, (x*2-315, 610), cinza, cinza_2, preto, cancelar)
-        b_cancelar.largura = 80
-        b_cancelar.altura = 80
+        b_cancelar.largura = 60
+        b_cancelar.altura = 160
 
         b_comprar = Botao("Comprar", "r", self.screen, (x-50, 600))
         compra = False
+        b_selecionar = Botao("Selecionar", "r", self.screen, (x-50, 600))
 
 
         while rodando:
@@ -431,10 +455,12 @@ class Loja:
 
             #self.screen.fill((11,59,70))    # Preenche a tela com um tom de azul
 
-            escrever_texto("Teste", self.tela, 0, 0, font_2, preto)
+            self.screen.blit(nuvem, (0,0))
+            escrever_centralizado("Loja", font_2, cinza, self.tela, rect_nuvem.centerx, rect_nuvem.centery-20)
 
             # Exibe um personagem no meio da tela
-            exibir_personagem(self.tela, self.personagens[index_per], x + slide, y)
+            personagem = self.personagens[index_per]
+            exibir_personagem(self.tela, personagem, x + slide, y)
 
             if index_per > 0: # Exibe um personagem a direita da tela
                 exibir_personagem(self.tela, self.personagens[index_per - 1], 0 + slide, y)
@@ -463,10 +489,10 @@ class Loja:
                 if event.type == pygame.KEYDOWN:
                     if event.key == pygame.K_ESCAPE:
                         rodando = False
-                    #Seta para esquerda
+                    # Seta para esquerda
                     elif event.key == pygame.K_LEFT:
                         click_esquerda = True
-                    #Seta para direita
+                    # Seta para direita
                     elif event.key == pygame.K_RIGHT:
                         click_direita = True
             
@@ -480,16 +506,22 @@ class Loja:
                     ativar_slide = 0
                 compra = False
             # Os botões relacionados a compra serão exibidos apenas quando o slide não estiver acontecendo
-            elif not compra:
-                b_comprar.draw()            # Exibe o botão de compra
-                b_comprar.escrever()
-                if b_comprar.esta_botao and click:
-                    compra = True
-            else:
-                b_confirmar.draw_image()    # Exibe o botão de confirmação da compra        
-                b_cancelar.draw_image()     # Exibe o botão de cancelamento da compra
-                if b_cancelar.esta_botao and click:
-                    compra = False 
+            elif not personagem.comprado:       # Opções de compra
+                if not compra:
+                    b_comprar.draw()            # Exibe o botão de compra
+                    b_comprar.escrever()
+                    if b_comprar.esta_botao and click:
+                        compra = True
+                else:
+                    b_confirmar.draw()
+                    b_confirmar.draw_image()    # Exibe o botão de confirmação da compra 
+                    b_cancelar.draw()       
+                    b_cancelar.draw_image()     # Exibe o botão de cancelamento da compra
+                    if b_cancelar.esta_botao and click:
+                        compra = False 
+            else:                               # Opções de seleção
+                b_selecionar.draw()
+                b_selecionar.escrever()
 
             # Verfica se o botão ou se a seta para esquerda foram pressionados
             if (b_esquerda.esta_botao_imagem and click) or click_esquerda:
@@ -498,9 +530,7 @@ class Loja:
             # Verfica se o botão ou se a seta para direita foram pressionados
             elif (b_direita.esta_botao_imagem and click) or click_direita:
                 if index_per < tamanho_loja - 1 and ativar_slide == 0:
-                    ativar_slide = 1
-            
-                        
+                    ativar_slide = 1                 
                         
             pygame.display.update()
             clock.tick(60)
@@ -526,9 +556,9 @@ class Menu:
         cinza = (35, 35, 35)
         cinza_2 = (70, 70, 70)
 
-        galinha = pygame.image.load("imagens/galinha.png")
-        elefante = pygame.image.load("imagens/Lfant.png")
-        elefante_gold = pygame.image.load("imagens/Lfantgold.png")
+        galinha = "imagens/galinha.png"
+        elefante = "imagens/Lfant.png"
+        elefante_gold = "imagens/Lfantgold.png"
         personagem = {"Gala Galinha": ["50", "Consegue dar pulos duplos", True, galinha], "Emaperson": ["100", "Pulos longos", False, elefante], "Gala Gali": ["500", "Consegue mais pontos", True, galinha], "Emapon": ["5000", "É shine", False, elefante_gold]}
         lista = []
         for nome, atributo in personagem.items():
@@ -553,16 +583,18 @@ class Menu:
             screen.blit(ceu, (0,0))
 
             screen.blit(nuvem_2, (25,25))
-
             escrever_centralizado("Plat", font, cinza_2, screen, x_centro_nuvem+25, y_centro_nuvem - 70)
             escrever_centralizado("Pinhas", font, cinza, screen, x_centro_nuvem+25, y_centro_nuvem + 30)
 
+            # Exibe botão "Jogar"
             bt1.draw_image()
             bt1.escrever(y_varia = 10)
 
+            # Exibe botão "Lojs"
             bt2.draw_image()
             bt2.escrever(y_varia = 10)
 
+            # Exibe botão "Sair"
             bt3.draw_image()
             bt3.escrever(y_varia = 10)
 
@@ -582,6 +614,7 @@ class Menu:
                         if event.key == K_ESCAPE:
                             pygame.quit()
                             exit()
+
 
 
             if bt1.esta_botao_imagem and click:
