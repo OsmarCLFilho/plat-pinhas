@@ -1,11 +1,11 @@
 import pygame as pg
 import numpy as np
-from math import sin, cos, pi, sqrt, tan
+from math import sin, cos, pi, tan
 
+GRAVITY = 6.5
 SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
 SCREEN_RATIO = SCREEN_WIDTH/SCREEN_HEIGHT
 TAN_HALF_FOV = tan((pi/2)/2)
-CAMERA_SPEED = 5
 MOUSE_SENSITIVITY = 0.1
 
 #Render package
@@ -17,14 +17,14 @@ class Camera:
     :param rotation: Azimuthal and polar angle of the camera
     :type rotation: tuple with 2 float values. The first ranges from 0 to 2pi and the second from -pi/2 to pi/2
     """
-    def __init__(self, position, rotation):
+    def __init__(self, position=(0, 0, 0), rotation=(0, 0)):
         self.position = np.array(position, dtype=float)
         self.rotation = np.array(rotation, dtype=float)
         self.rotation[0] = self.rotation[0]%(2*pi)
 
         if self.rotation[1] > pi/3:
             self.rotation[1] = pi/3
-
+            
         elif self.rotation[1] < -pi/3:
             self.rotation[1] = -pi/3
 
@@ -37,6 +37,8 @@ class Camera:
 
         self.sinthe = sinthe
         self.costhe = costhe
+        self.sinphi = sinphi
+        self.cosphi = cosphi
         self.transform_matrix = np.array([[costhe*cosphi, sinthe*cosphi, sinphi],
                                           [-sinthe, costhe, 0],
                                           [-costhe*sinphi, -sinthe*sinphi, cosphi]])
@@ -60,6 +62,8 @@ class Camera:
 
         self.sinthe = sinthe
         self.costhe = costhe
+        self.sinphi = sinphi
+        self.cosphi = cosphi
         self.transform_matrix = np.array([[costhe*cosphi, sinthe*cosphi, sinphi],
                                           [-sinthe, costhe, 0],
                                           [-costhe*sinphi, -sinthe*sinphi, cosphi]])
@@ -95,9 +99,19 @@ class Mesh:
 
         self.normals = np.array(self.normals)
 
+#Automaticaly creates the vertices and triangles for a rectangular mesh with the desired length, width and height.
+#Then, creates such a mesh
 class PlatMesh(Mesh):
     def __init__(self, length, width, height):
-        #Calculo dos vértices a partir das dimensões
+        vertices = []
+        for x in (1, -1):
+            for y in (1, -1):
+                for z in (1, -1):
+                    vertices.append((x*length/2,y*width/2,z*height/2))
+
+        triangles = ((0,2,1),(1,2,3),(4,0,5),(5,0,1),(6,4,7),(7,4,5),(2,6,3),(3,6,7),(4,6,0),(0,6,2),(1,3,5),(5,3,7))
+
+        self.setup_mesh(vertices, triangles)
 
 #Render package
 class Body:
@@ -105,14 +119,41 @@ class Body:
         self.mesh = mesh
         self.position = np.array(position, dtype=float)
 
+    def set_position(self, position):
+        self.position = np.array(position, dtype=float)
+
+    def get_position(self):
+        return self.position
+    
+    def set_posx(self, x):
+        self.position[0] = x
+
+    def set_posy(self, y):
+        self.position[1] = y
+
+    def set_posz(self, z):
+        self.position[2] = z
+
 #Render package
 class Space:
-    def __init__(self, bodies=[]):
+    def __init__(self, bodies=[], plat_spawn_timer=5):
         self.bodies = []
         self.bodies.extend(bodies)
+        self.plat_spawn_timer = plat_spawn_timer
+        self.current_spawn_timer = plat_spawn_timer
 
     def add_bodies(self, bodies):
         self.bodies.extend(bodies)
+
+    def remove_body(self, body):
+        self.bodies.remove(body)
+
+    def countdown_platform(self, delta_time):
+        self.current_spawn_timer -= delta_time
+
+        if self.current_spawn_timer < 0:
+            self.current_spawn_timer += self.plat_spawn_timer
+            return True
 
 #Render package
 def project_triangle(vertices, camera):
@@ -124,7 +165,7 @@ def project_triangle(vertices, camera):
     M = camera.transform_matrix
     V = np.matmul(M, V.T).T
 
-    if V[0,0] < 0 or V[1,0] < 0 or V[2,0] < 0:
+    if V[0,0] < 1 or V[1,0] < 1 or V[2,0] < 1:
         return None
 
     #Scaled vectors such that the first component is 1
@@ -143,7 +184,7 @@ def project_triangle(vertices, camera):
     return V[:,1:]
 
 #Render package
-def project_space(space, camera):
+def project_space(space, camera, player_sprite):
     drawable_trigs = []
     for body in sorted(space.bodies, key=lambda b: np.linalg.norm((b.position - camera.position), ord=1), reverse=True):
         mesh = body.mesh
@@ -151,7 +192,8 @@ def project_space(space, camera):
         if mesh == None:
             pass
 
-        else:
+        #this will catch Mesh and all its subclasses
+        elif isinstance(mesh, Mesh):
             for index, trig in enumerate(mesh.triangles):
                 trig_vertices = np.array([mesh.vertices[trig[0]],
                                           mesh.vertices[trig[1]],
@@ -170,165 +212,29 @@ def project_space(space, camera):
                     #Bad life choices right here, change this later, add a triangle class or whatever
                     drawable_trigs.append(np.column_stack((projection, mesh.normals[index])))
 
-    return np.array(drawable_trigs)
+        elif isinstance(mesh, str):
+            scale = camera.cosphi
+            player_sprite = pg.transform.scale(player_sprite, [player_sprite.get_rect()[2], player_sprite.get_rect()[3]*scale])
+            drawable_trigs.append(pg.Surface.convert_alpha(player_sprite))
+
+    return drawable_trigs
 
 #End of package things
 
 def draw_wireframes(surface, triangles):
     for tri in triangles:
         pg.draw.aalines(surface, (255, 255, 255), points=tri[:,:2].tolist(), closed=True)
-
 def draw_flat_shade(surface, triangles, light_direction):
     for tri in triangles:
-        shade = ((np.dot(tri[:,2], light_direction) + 1)*75) + 50
-        if shade > 255:
-            shade = 255
+        if isinstance(tri, np.ndarray):
+            shade = ((np.dot(tri[:,2], light_direction) + 1)*75) + 50
+            if shade > 255:
+                shade = 255
 
-        pg.draw.polygon(surface, (shade, shade, shade), points=tri[:,:2].tolist())
-        pg.draw.aalines(surface, (shade/4, shade/4, shade/4), points=tri[:,:2].tolist(), closed=True)
+            pg.draw.polygon(surface, (shade, shade, shade), points=tri[:,:2].tolist())
+            pg.draw.aalines(surface, (shade/4, shade/4, shade/4), points=tri[:,:2].tolist(), closed=True)
 
-def start_game():
-    """ Starts pygame modules and creates a surface for the game.
-
-    :return: Pygame surface used by the game
-    :rtype: pygame.Surface
-    """
-
-    print("Starting game")
-    pg.display.init()
-    surface = pg.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT))
-
-    print("Display init:", pg.display.get_init())
-    print("Display set mode:", pg.display.get_active())
-
-    return surface
-
-def end_game():
-    """ Quits all pygame modules
-
-    :rtype: None
-    """
-    print("Ending game")
-    pg.display.quit()
-
-def main():
-    surface = start_game()
-
-    clock = pg.time.Clock()
-
-    #Octahedron
-    vertices_1 = ((1, 0, 0), (0, 1, 0), (0, 0, 1), (-1, 0, 0), (0, -1, 0), (0, 0, -1))
-    triangles_1 = ((0,1,2), (1,3,2), (3,4,2), (4,0,2), (0,5,1), (1,5,3), (3,5,4), (4,5,0))
-    mesh_1 = Mesh(vertices_1, triangles_1)
-
-    body_1 = Body(mesh_1, (8,0,0))
-    body_2 = Body(mesh_1, (4,8,0))
-    body_3 = Body(mesh_1, (0,0,0))
-    body_4 = Body(mesh_1, (-8,0,0))
-    body_5 = Body(mesh_1, (3,0,0))
-
-    main_space = Space((body_1, body_2, body_3, body_4, body_5))
-
-    camera = Camera((0, 0, 2), (0, -pi/6))
-
-    game_running = True
-    clock.tick()
-
-    #game loop
-    direction = [0, 0, 0, 0, 0, 0]
-    pg.event.set_grab(True)
-    pg.mouse.set_visible(False)
-    pg.mouse.get_rel()
-    while game_running:
-        #Events stuff
-        clock.tick(30)
-        delta_time = clock.get_time()/1000
-
-        if pg.event.peek(eventtype=pg.QUIT, pump=True):
-            game_running = False
-
-        events = pg.event.get(pump=True)
-
-        for e in events:
-            print(e)
-            if e.type == pg.KEYDOWN:
-                #key w
-                if e.key == 119:
-                    direction[0] = 1
-
-                #key a
-                elif e.key == 97:
-                    direction[1] = 1
-
-                #key s
-                elif e.key == 115:
-                    direction[2] = 1
-
-                #key d
-                elif e.key == 100:
-                    direction[3] = 1
-
-                #key q
-                elif e.key == 113:
-                    direction[4] = 1
-
-                #key e
-                elif e.key == 101:
-                    direction[5] = 1
-
-                #esc
-                elif e.key == 27:
-                    game_running = False
-
-            elif e.type == pg.KEYUP:
-                #key w
-                if e.key == 119:
-                    direction[0] = 0
-
-                #key a
-                elif e.key == 97:
-                    direction[1] = 0
-
-                #key s
-                elif e.key == 115:
-                    direction[2] = 0
-
-                #key d
-                elif e.key == 100:
-                    direction[3] = 0
-
-                #key q
-                elif e.key == 113:
-                    direction[4] = 0
-
-                #key e
-                elif e.key == 101:
-                    direction[5] = 0
-
-        #Camera work
-        mouse_rel = pg.mouse.get_rel()
-        camera_rot = np.array([-mouse_rel[0],
-                               -mouse_rel[1]])*delta_time*MOUSE_SENSITIVITY
-        camera.set_rotation(camera.get_rotation() + camera_rot)
-
-        displacement = np.array([(direction[0] - direction[2])*camera.costhe + (direction[3] - direction[1])*camera.sinthe,
-                                 (direction[0] - direction[2])*camera.sinthe - (direction[3] - direction[1])*camera.costhe,
-                                 (direction[5] - direction[4])])*delta_time*CAMERA_SPEED
-
-        camera.set_position(camera.get_position() + displacement)
-
-        #Render stuff
-        surface.fill((0, 0, 0))
-
-        light_source = np.array((1,1,1))
-        light_source = light_source/np.linalg.norm(light_source, ord=2)
-
-        #draw_wireframes(surface, project_space(main_space, camera))
-        draw_flat_shade(surface, project_space(main_space, camera), light_source)
-
-        pg.display.flip()
-
-    end_game()
-
-if __name__ == "__main__":
-    main()
+        elif isinstance(tri, pg.Surface):
+            w = tri.get_width()
+            h = tri.get_height()
+            surface.blit(tri, [(SCREEN_WIDTH - w)/2, (SCREEN_HEIGHT - h)/2])
