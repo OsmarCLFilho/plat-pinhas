@@ -252,7 +252,6 @@ class Botao () :
 
 
 class Personagem:
-
     def __init__(self, nome, atributos = ["9999", "Não existe", False, "imagens/error_char.png"], selecionado = False):
         """Inicialização da classe
 
@@ -559,7 +558,6 @@ class Loja:
             clock.tick(60)
 
 class Menu:
-
     def menu_principal():
         largura, altura = 900, 700
         screen = pygame.display.set_mode((largura, altura))
@@ -653,7 +651,7 @@ class Menu:
             pygame.display.update()
             clock.tick(60)
 
-    def jogo(tela):
+    def jogo(screen):
         import pygame as pg
         import numpy as np
         import dev_game as gs #game_src
@@ -665,17 +663,5 @@ class Menu:
         SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
         MOUSE_SENSITIVITY = 0.1
 
-        pg.display.init()
-        pg.mixer.init()
-
-        surface = pg.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT))
-        game = gs.Game(surface=surface, player_speed=PLAYER_SPEED, camera_distance=CAMERA_DISTANCE, gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY)
-
-        #pg.mixer.music.load('song.mp3')
-        #pg.mixer.music.set_volume(0.2)
-        #pg.mixer.music.play()
-
-        #game loop
+        game = gs.Game(surface=screen, player_speed=PLAYER_SPEED, camera_distance=CAMERA_DISTANCE, gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY)
         game.start_game()
-
-        #pg.mixer.quit()
