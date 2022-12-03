@@ -294,9 +294,17 @@ class Personagem:
     def comprado(self):
         return self.__comprado
 
+    @comprado.setter
+    def comprado(self, comprado):
+        self.__comprado = comprado
+
     @property
     def selecionado(self):
         return self.__selecionado
+
+    @selecionado.setter
+    def selecionado(self, selecionado):
+        self.__selecionado = selecionado
 
     def __str__(self):
         return self.nome
@@ -440,8 +448,15 @@ class Loja:
         b_cancelar.altura = 160
 
         b_comprar = Botao("Comprar", "r", self.screen, (x-50, 600))
+        b_comprar.largura = 275
         compra = False
+
         b_selecionar = Botao("Selecionar", "r", self.screen, (x-50, 600))
+        b_selecionar.largura = 275
+
+        b_selecionado = Botao("Selecionado", "r", self.screen, (x-50, 600))
+        b_selecionado.largura = 275
+
 
 
         while rodando:
@@ -519,9 +534,17 @@ class Loja:
                     b_cancelar.draw_image()     # Exibe o botão de cancelamento da compra
                     if b_cancelar.esta_botao and click:
                         compra = False 
+                    elif b_confirmar.esta_botao and click:
+                        personagem.comprado = True
             else:                               # Opções de seleção
-                b_selecionar.draw()
-                b_selecionar.escrever()
+                if not personagem.selecionado:
+                    b_selecionar.draw()
+                    b_selecionar.escrever()
+                    if b_selecionar.esta_botao and click:
+                        personagem.selecionado = True 
+                else:
+                    b_selecionado.draw()
+                    b_selecionado.escrever()
 
             # Verfica se o botão ou se a seta para esquerda foram pressionados
             if (b_esquerda.esta_botao_imagem and click) or click_esquerda:
