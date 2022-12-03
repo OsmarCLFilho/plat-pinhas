@@ -4,6 +4,7 @@ from loja import Menu
 
 pygame.init()
 
-Menu.menu_principal()
+menu = Menu()
+menu.menu_principal()
 
 pygame.quit()

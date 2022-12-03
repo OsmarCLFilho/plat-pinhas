@@ -34,9 +34,9 @@ class Health_bar(pg.sprite.Sprite):
         pg.draw.rect(surface, (255,255,255),(10,10,self.health_bar_length,25),4)
 
 class Player(Body):
-    def __init__(self, size, strength, health, personagem):
+    def __init__(self, size, strength, health, character):
         #super().__init__(mesh=mesh)
-        super().__init__(mesh=personagem.imagem_endereco)
+        super().__init__(mesh=character.imagem_endereco)
         #super().__init__(mesh="Lfant.png")
 
         self.size = size
@@ -116,7 +116,7 @@ class Meshes:
     plat_mesh = PlatMesh(5, 5, 4)
 
 class Game:
-    def __init__(self, surface, player_speed, camera_distance, gravity, mouse_sensitivity):
+    def __init__(self, surface, player_speed, camera_distance, gravity, mouse_sensitivity, character):
         self.surface = surface
 
         self.PLAYER_SPEED = player_speed
@@ -125,9 +125,9 @@ class Game:
         self.MOUSE_SENSITIVITY = mouse_sensitivity
 
         #---
-        self.personagem = prs("Gala Galinha", ["50", "Consegue dar pulos duplos", True, "imagens/galinha.png"])
+        self.character = character
 
-        self.player = Player(size=2, strength=15, health=100, personagem=self.personagem)
+        self.player = Player(size=2, strength=15, health=100, character=self.character)
         #---
 
         first_platform = Obstacle(Meshes.plat_mesh, (0, 0, -5), (5, 5, 4), True)
@@ -145,7 +145,8 @@ class Game:
 
         plat_vec = (0,20,0)
 
-        PLAYER_SPRITE = pg.image.load(self.personagem.imagem_endereco)
+        PLAYER_SPRITE = pg.image.load(self.character.imagem_endereco)
+        print(self.character.imagem_endereco)
         PLAYER_SPRITE = pg.transform.scale(PLAYER_SPRITE, np.array(PLAYER_SPRITE.get_rect()[2:])/1.2)
 
         self.game_running = True

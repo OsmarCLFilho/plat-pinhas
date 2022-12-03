@@ -17,7 +17,6 @@ def escrever_texto(texto, superficie, x, y, fonte, color = (255, 255, 255)):
         textobj = fonte.render(texto, True, color)
         superficie.blit(textobj, (x, y))
 
-
 def escrever_centralizado(texto, fonte, color, superficie, x, y):
         """Escreve um texto na tela centralizado horizontalmente
 
@@ -456,8 +455,6 @@ class Loja:
         b_selecionado = Botao("Selecionado", "r", self.screen, (x-50, 600))
         b_selecionado.largura = 275
 
-
-
         while rodando:
 
             self.screen.blit(ceu, (0,0))
@@ -540,6 +537,8 @@ class Loja:
                     b_selecionar.draw()
                     b_selecionar.escrever()
                     if b_selecionar.esta_botao and click:
+                        for pers in self.personagens:
+                            pers.selecionado = False
                         personagem.selecionado = True 
                 else:
                     b_selecionado.draw()
@@ -558,7 +557,21 @@ class Loja:
             clock.tick(60)
 
 class Menu:
-    def menu_principal():
+    def __init__(self):
+        self.galinha = "imagens/galinha.png"
+        self.elefante = "imagens/Lfant.png"
+        self.elefante_gold = "imagens/Lfantgold.png"
+        self.personagem = {"Gala Galinha": ["50", "Consegue dar pulos duplos", True, self.galinha], "Emaperson": ["100", "Pulos longos", False, self.elefante], "Gala Gali": ["500", "Consegue mais pontos", False, self.galinha], "Emapon": ["5000", "É shine", False, self.elefante_gold]}
+
+        self.lista_pers = []
+        for nome, atributo in self.personagem.items():
+            self.lista_pers.append(Personagem(nome,atributo))
+
+        self.lista_pers[0].selecionado = True
+
+        self.loja = Loja(self.lista_pers)
+
+    def menu_principal(self):
         largura, altura = 900, 700
         screen = pygame.display.set_mode((largura, altura))
         pygame.display.set_caption("Jogo")
@@ -576,15 +589,6 @@ class Menu:
         preto = (0, 0, 0)
         cinza = (35, 35, 35)
         cinza_2 = (70, 70, 70)
-
-        galinha = "imagens/galinha.png"
-        elefante = "imagens/Lfant.png"
-        elefante_gold = "imagens/Lfantgold.png"
-        personagem = {"Gala Galinha": ["50", "Consegue dar pulos duplos", True, galinha], "Emaperson": ["100", "Pulos longos", False, elefante], "Gala Gali": ["500", "Consegue mais pontos", True, galinha], "Emapon": ["5000", "É shine", False, elefante_gold]}
-        lista = []
-        for nome, atributo in personagem.items():
-            lista.append(Personagem(nome,atributo))
-        loja = Loja(lista)
 
         bt1 = Botao("Jogar", "T", screen, (largura-205, 100), cor_fonte = preto, imagem = nuvem, imagem_2 = nuvem_chuva)
         bt1.font = font_2
@@ -611,7 +615,7 @@ class Menu:
             bt1.draw_image()
             bt1.escrever(y_varia = 10)
 
-            # Exibe botão "Lojs"
+            # Exibe botão "Loja"
             bt2.draw_image()
             bt2.escrever(y_varia = 10)
 
@@ -636,13 +640,11 @@ class Menu:
                             pygame.quit()
                             exit()
 
-
-
             if bt1.esta_botao_imagem and click:
-                Menu.jogo(screen)
+                self.jogo(screen)
 
             if bt2.esta_botao_imagem and click:
-                loja.exibir_loja()
+                self.loja.exibir_loja()
 
             if bt3.esta_botao_imagem and click:
                 pygame.quit()
@@ -651,10 +653,10 @@ class Menu:
             pygame.display.update()
             clock.tick(60)
 
-    def jogo(screen):
+    def jogo(self, screen):
         import pygame as pg
         import numpy as np
-        import dev_game as gs #game_src
+        import dev_game as gs #game src
         import menu as mn
 
         PLAYER_SPEED = 10
@@ -663,5 +665,13 @@ class Menu:
         SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
         MOUSE_SENSITIVITY = 0.1
 
-        game = gs.Game(surface=screen, player_speed=PLAYER_SPEED, camera_distance=CAMERA_DISTANCE, gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY)
+        pers_selecionado = None
+        for pers in self.lista_pers:
+            if pers.selecionado:
+                pers_selecionado = pers
+                print(pers)
+                break
+
+        game = gs.Game(surface=screen, player_speed=PLAYER_SPEED, camera_distance=CAMERA_DISTANCE,
+                       gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY, character=pers_selecionado)
         game.start_game()
