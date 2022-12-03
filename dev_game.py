@@ -5,13 +5,6 @@ import pygame as pg
 import numpy as np
 from math import pi
 
-PLAYER_SPEED = 10
-CAMERA_DISTANCE = 15
-GRAVITY = 40
-SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
-SCREEN_RATIO = SCREEN_WIDTH/SCREEN_HEIGHT
-MOUSE_SENSITIVITY = 0.1
-
 class Health_bar(pg.sprite.Sprite):
     def __init__(self, health):
         self.health = 100
@@ -56,9 +49,9 @@ class Player(Body):
     def dead(self):
         return not bool(self.hp_bar.sprite.health)
 
-    def gravity_step(self, t):
-        self.vertical_speed = self.vertical_speed - GRAVITY*t
-        self.set_posz(self.get_position()[2] + t*(self.vertical_speed))
+    def gravity_step(self, time, gravity):
+        self.vertical_speed = self.vertical_speed - gravity*time
+        self.set_posz(self.get_position()[2] + time*(self.vertical_speed))
 
     def jump(self):
         if self.able_to_jump:
@@ -120,10 +113,15 @@ class Meshes:
     plat_mesh = PlatMesh(5, 5, 4)
 
 class Game:
-    def __init__(self, surface):
+    def __init__(self, surface, player_speed, camera_distance, gravity, mouse_sensitivity):
         self.surface = surface
 
-        self.player = Player(2, 15, 100)
+        self.PLAYER_SPEED = player_speed
+        self.CAMERA_DISTANCE = camera_distance
+        self.GRAVITY = gravity
+        self.MOUSE_SENSITIVITY = mouse_sensitivity
+
+        self.player = Player(size=2, strength=15, health=100)
         
         first_platform = Obstacle(Meshes.plat_mesh, (0, 0, -5), (5, 5, 4), True)
         bodies = [self.player, first_platform]
@@ -225,13 +223,13 @@ class Game:
             #Camera work
             mouse_rel = pg.mouse.get_rel()
             camera_rot = np.array([-mouse_rel[0],
-                                   -mouse_rel[1]])*delta_time*MOUSE_SENSITIVITY
+                                   -mouse_rel[1]])*delta_time*self.MOUSE_SENSITIVITY
 
             self.player.camera.set_rotation(self.player.camera.get_rotation() + camera_rot)
 
             displacement = np.array([(direction[0] - direction[2])*self.player.camera.costhe + (direction[3] - direction[1])*self.player.camera.sinthe,
                                      (direction[0] - direction[2])*self.player.camera.sinthe - (direction[3] - direction[1])*self.player.camera.costhe,
-                                     0])*delta_time*PLAYER_SPEED
+                                     0])*delta_time*self.PLAYER_SPEED
 
             displacement_norm = np.linalg.norm(displacement, ord=2)
             if displacement_norm == 0:
@@ -241,13 +239,13 @@ class Game:
                 if type(i) == Obstacle:
                     i.set_position(i.get_position() - displacement/displacement_norm)
 
-            camera_pos = np.array([-CAMERA_DISTANCE*self.player.camera.cosphi*self.player.camera.costhe,
-                                   -CAMERA_DISTANCE*self.player.camera.cosphi*self.player.camera.sinthe,
-                                   -CAMERA_DISTANCE*self.player.camera.sinphi])
+            camera_pos = np.array([-self.CAMERA_DISTANCE*self.player.camera.cosphi*self.player.camera.costhe,
+                                   -self.CAMERA_DISTANCE*self.player.camera.cosphi*self.player.camera.sinthe,
+                                   -self.CAMERA_DISTANCE*self.player.camera.sinphi])
 
             self.player.camera.set_position(self.player.get_position() + camera_pos)
 
-            self.player.gravity_step(delta_time)
+            self.player.gravity_step(delta_time, self.GRAVITY)
 
             if self.player.iframes:
                 self.player.iframes -= 1
@@ -276,12 +274,15 @@ class Game:
             pg.display.flip()
             self.surface.fill((0, 0, 0))
 
-def main():
+if __name__ == "__main__":
+    pg.display.init()
+    pg.mixer.init()
+
     surface = pg.display.set_mode(size=(SCREEN_WIDTH, SCREEN_HEIGHT))
     game = Game(surface=surface)
 
     pg.mixer.music.load('song.mp3')
-    pg.mixer.music.set_volume(0.2)
+    pg.mixer.music.set_volume(0.5)
     pg.mixer.music.play()
    
     #game loop
@@ -289,9 +290,3 @@ def main():
 
     pg.display.quit()
     pg.mixer.quit()
-
-if __name__ == "__main__":
-    pg.display.init()
-    pg.mixer.init()
-
-    main()

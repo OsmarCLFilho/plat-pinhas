@@ -20,8 +20,7 @@ class Btn () :
     def click(self, coordenada):
         if self.x + self.largura >= coordenada[0] >= self.x and self.y + self.altura >= coordenada[1] >= self.y:
             print("clickou" + self.conteudo_texto)
-            if self.acao == "sair":
-                return True
+            return self.acao()
 
 class Menu():
     def __init__(self, btns, cx, cy, darkc, lightc):
@@ -52,8 +51,7 @@ class Menu():
                 
             if ev.type == pygame.MOUSEBUTTONDOWN:  
                 for btn in self.botoes:
-                    if btn.click(self.mouse):
-                        self.running = False
+                    btn.click()
 
     def start(self):
         self.running = True
@@ -75,6 +73,9 @@ if __name__ == "__main__":
     HEIGHT = 720
     res = (WIDTH, HEIGHT)
     screen = pygame.display.set_mode(res)
+
+    start_button = Btn("Start", )
+
     menu = Menu(btns=(Btn("Start", "comecar",(46,52,64)), Btn("Exit", "sair",(46,52,64)), Btn("Loja", "comprar",(46,52,64))),
                 cx=WIDTH/2-53.5, cy=HEIGHT/2-28.5,
                 darkc=(100,100,100), lightc=(170,170,170))
