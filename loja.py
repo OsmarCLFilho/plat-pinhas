@@ -404,12 +404,15 @@ class Loja:
 
         ceu = pygame.image.load("imagens/ceu.png")
         esquerda = pygame.image.load("imagens/esquerda.png")
-        direita = pygame.image.load("imagens/direita.png")
         esquerda_2 = pygame.image.load("imagens/esquerda_2.png")
+        direita = pygame.image.load("imagens/direita.png")
         direita_2 = pygame.image.load("imagens/direita_2.png")
+        sair = pygame.image.load("imagens/sair.png")
+        sair_2 = pygame.image.load("imagens/sair_2.png")
         confirmar = pygame.image.load("imagens/V.png")
         cancelar = pygame.image.load("imagens/X.png")
         nuvem = pygame.image.load("imagens/cloud_3.png")
+        nuvem_2 = pygame.image.load("imagens/cloud_5.png")
 
         rect_nuvem = nuvem.get_rect()
 
@@ -419,11 +422,11 @@ class Loja:
         cinza = (10, 10, 10)
         cinza_2 = (40, 40, 40)
 
-        b_esquerda = Botao("Esquerda", self.screen, (75, 620), cinza, cinza_2, preto, esquerda, esquerda_2)
+        b_esquerda = Botao("Esquerda", self.screen, (75, 620), imagem = esquerda, imagem_2 =  esquerda_2)
         b_esquerda.largura = 0
         b_esquerda.altura = 0
 
-        b_direita = Botao("Direita", self.screen, (x*2-70, 620), cinza, cinza_2, preto, direita, direita_2)
+        b_direita = Botao("Direita", self.screen, (x*2-70, 620), imagem = direita, imagem_2 = direita_2)
         b_direita.largura = 0
         b_direita.altura = 0
 
@@ -434,6 +437,8 @@ class Loja:
         b_cancelar = Botao("Cancelar", self.screen, (x*2-315, 610), cinza, cinza_2, preto, cancelar)
         b_cancelar.largura = 60
         b_cancelar.altura = 160
+
+        b_sair = Botao("Sair", self.screen, (2*x-100, 20), imagem = sair, imagem_2 = sair_2)
 
         b_comprar = Botao("Comprar", self.screen, (x-75, 600))
         b_comprar.largura = 275
@@ -458,6 +463,9 @@ class Loja:
 
             self.screen.blit(nuvem, (0,0))
             escrever_centralizado("Loja", font_2, cinza, self.tela, rect_nuvem.centerx, rect_nuvem.centery-20)
+
+            self.screen.blit(nuvem_2, (2*x-90,0))
+            b_sair.draw_image()
 
             # Exibe um personagem no meio da tela
             personagem = self.personagens[index_per]
@@ -540,7 +548,10 @@ class Loja:
             # Verfica se o botão ou se a seta para direita foram pressionados
             elif (b_direita.esta_botao_imagem and click) or click_direita:
                 if index_per < tamanho_loja - 1 and ativar_slide == 0:
-                    ativar_slide = 1                 
+                    ativar_slide = 1  
+
+            if b_sair.esta_botao_imagem and click:
+                rodando = False
                         
             pygame.display.update()
             clock.tick(60)
