@@ -187,6 +187,7 @@ class Game:
             events = pg.event.get(pump=True)
 
             for e in events:
+                print(e)
                 if e.type == pg.KEYDOWN:
                     #key w
                     if e.key == 119:
