@@ -775,9 +775,7 @@ class Menu:
 
         game = gs.Game(surface=screen, camera_distance=CAMERA_DISTANCE, gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY,
                        character=pers_selecionado)
-        game.start_game()
-
-        self.pontos += 50 
+        self.pontos += game.start_game()
 
     def creditos(self, screen):
         clock = pygame.time.Clock()

@@ -48,6 +48,7 @@ class Player(Body):
         self.vertical_speed = 0
         self.max_jumps = character.quantd_pulo
         self.jumps_available = character.quantd_pulo
+        self.jump_sound = pg.mixer.Sound("audio/Select.wav")
 
     def dead(self):
         return not bool(self.hp_bar.sprite.health)
@@ -60,6 +61,7 @@ class Player(Body):
         if self.jumps_available > 0:
             self.vertical_speed = self.strength
             self.jumps_available -= 1
+            self.jump_sound.play()
 
     def apply_damage(self, amount):
         self.iframes = 10
@@ -143,14 +145,13 @@ class Meshes:
     __t_o = ((0,1,2), (1,3,2), (3,4,2), (4,0,2), (0,5,1), (1,5,3), (3,5,4), (4,5,0))
     oct_mesh = Mesh(__v_o, __t_o)
     wide_plat_mesh = PlatMesh(10, 10, 4)
-    tall_plat_mesh = PlatMesh(10, 10, 12)
+    tall_plat_mesh = PlatMesh(10, 10, 20)
 
 class Game:
     def __init__(self, surface, camera_distance, gravity, mouse_sensitivity, character):
         self.surface = surface
 
         self.PLAYER_SPEED = character.velocidade
-        print(self.PLAYER_SPEED)
         self.CAMERA_DISTANCE = camera_distance
         self.GRAVITY = gravity
         self.MOUSE_SENSITIVITY = mouse_sensitivity
@@ -174,13 +175,16 @@ class Game:
         pg.mouse.set_visible(False)
         pg.mouse.get_rel()
 
-        plat_vec = (0,20,0)
+        plat_vec = (0,30,0)
         turn_cooldown = 0
 
         PLAYER_SPRITE = pg.image.load(self.character.imagem_endereco)
         PLAYER_SPRITE = pg.transform.scale(PLAYER_SPRITE, np.array(PLAYER_SPRITE.get_rect()[2:])/1.2)
 
         self.game_running = True
+
+        points = 0
+        points_rate = 1
 
         clock = pg.time.Clock()
         clock.tick()
@@ -263,21 +267,22 @@ class Game:
                 old_pos = self.space.bodies[-1].get_position()
                 new_pos = old_pos + rotation(angle) @ plat_vec
 
-                h = np.random.choice([0,4,-4])
+                vec_norm = np.linalg.norm(plat_vec)
+
                 move = 0
                 if np.random.rand() < 0.2:
-                    move = 10*plat_vec_perp/np.linalg.norm(plat_vec)
+                    move = 10*plat_vec_perp/vec_norm
 
                 if np.random.rand() < 0.8:
                     if type(move) == np.ndarray:
-                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + (0,0,h) + plat_vec_perp, (0, 0, 0), False, 100),))
-                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + (0,0,h) - plat_vec_perp, (0, 0, 0), False, 100),))
+                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + 20*plat_vec_perp/vec_norm, (0, 0, 0), False, 100),))
+                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos - 20*plat_vec_perp/vec_norm, (0, 0, 0), False, 100),))
 
-                    self.space.add_bodies((Obstacle(Meshes.wide_plat_mesh, new_pos + (0,0,h), (10, 10, 4), True, 100, move),))
+                    self.space.add_bodies((Obstacle(Meshes.wide_plat_mesh, new_pos, (10, 10, 4), True, 100, move),))
 
                 else:
-                    self.space.add_bodies((Obstacle(Meshes.tall_plat_mesh, new_pos + (0,0,8), (10, 10, 12), True, 100),))
-                    self.space.add_bodies((Obstacle(None, new_pos + (0,0,12), (0,0,0), True, 100),))
+                    self.space.add_bodies((Obstacle(Meshes.tall_plat_mesh, new_pos, (10, 10, 20), True, 100),))
+                    self.space.add_bodies((Obstacle(None, new_pos, (0,0,0), True, 100),))
 
 
             #Camera work
@@ -298,6 +303,8 @@ class Game:
             displacement = delta_time*self.PLAYER_SPEED*displacement/displacement_norm
 
             self.player.gravity_step(delta_time, self.GRAVITY)
+            if self.player.get_position()[2] < -10:
+                self.game_running = False
 
             for i in self.space.bodies:
                 if type(i) == Obstacle:
@@ -335,6 +342,8 @@ class Game:
             if self.player.dead():
                 self.game_running = False
 
+            points += (delta_time*points_rate)
+
             #Render stuff
             light_source = np.array((1,1,1))
             light_source = light_source/np.linalg.norm(light_source, ord=2)
@@ -344,11 +353,12 @@ class Game:
             self.player.hp_bar.update(self.surface)
 
             pg.display.flip()
-            self.surface.fill((0, 0, 0))
+            self.surface.fill((200, 200, 255))
 
         pg.mouse.set_visible(True)
         pg.event.set_grab(False)
 
+        return round(points)
 
 if __name__ == "__main__":
     pg.display.init()
