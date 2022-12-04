@@ -146,7 +146,6 @@ class Game:
         plat_vec = (0,20,0)
 
         PLAYER_SPRITE = pg.image.load(self.character.imagem_endereco)
-        print(self.character.imagem_endereco)
         PLAYER_SPRITE = pg.transform.scale(PLAYER_SPRITE, np.array(PLAYER_SPRITE.get_rect()[2:])/1.2)
 
         self.game_running = True

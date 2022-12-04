@@ -38,12 +38,11 @@ def escrever_centralizado(texto, fonte, color, superficie, x, y):
 
 
 class Botao () :
-    def __init__(self, texto, action,  tela, coordenada, cor_botao_1 = (25, 25, 25), cor_botao_2 = (80, 80, 80), cor_fonte = (255, 255, 255),imagem = None, imagem_2 = None):
+    def __init__(self, texto,  tela, coordenada, cor_botao_1 = (25, 25, 25), cor_botao_2 = (80, 80, 80), cor_fonte = (255, 255, 255),imagem = None, imagem_2 = None):
         """Cria um botão para uma tela com pygame
 
         Args:
             texto (str): Texto do botão
-            action (str): _description_
             tela (pygame.Surface):  Janela do botão
             coordenada (tuple):     Tupla contendo 2 inteiros 
                                     representandos as coordenadas do mouse
@@ -58,7 +57,6 @@ class Botao () :
                                         quando o mouse passa por cima
         """
         self.__conteudo_texto = texto
-        self.__acao = action
         self.__cor_botao_1 = cor_botao_1
         self.__cor_botao_2 = cor_botao_2
         self.__cor_fonte = cor_fonte
@@ -70,16 +68,11 @@ class Botao () :
         else:
             self.__imagem_2 = imagem
         
-        self.__font = pygame.font.SysFont("arialblack", 40) 
+        self.__font = pygame.font.SysFont("arialblack", 30) 
         self.__tamanho_botao = 1
         self.__largura = 50 
         self.__altura = self.texto.get_height()
        
-
-    @property
-    def acao(self):
-        return self.__acao 
-
     @property
     def altura(self):
         return self.__altura
@@ -332,7 +325,8 @@ class Loja:
     def selecionado(self):
         for personagem in self.personagens:
             if personagem.selecionado:
-                return personagem
+                break
+        return personagem
 
     
     def exibir_loja(self):
@@ -348,8 +342,6 @@ class Loja:
                 x (int): Posição a ser exibido em relação ao eixo x
                 y (int): Posição a ser exibido em relação ao eixo y
             """
-
-            
 
             #font = pygame.font.SysFont("arialblack", 40)
             font = pygame.font.Font('fonte/AGENTORANGE.TTF', 40)
@@ -386,7 +378,6 @@ class Loja:
             # Escreve o preço do personagem
             preco = personagem.preco
             y_preco = y + 200
-
             # Moldura 2
             moldura_2 = pygame.image.load("imagens/cloud_4.png")
             x_mold_2 = x - moldura_2.get_width()/2
@@ -422,37 +413,36 @@ class Loja:
 
         rect_nuvem = nuvem.get_rect()
 
-        #font_2 = pygame.font.SysFont("arialblack", 30)
         font_2 = pygame.font.Font('fonte/AGENTORANGE.TTF', 30)
 
         preto = (255, 255, 255)
         cinza = (10, 10, 10)
         cinza_2 = (40, 40, 40)
 
-        b_esquerda = Botao("Esquerda", "r", self.screen, (75, 620), cinza, cinza_2, preto, esquerda, esquerda_2)
+        b_esquerda = Botao("Esquerda", self.screen, (75, 620), cinza, cinza_2, preto, esquerda, esquerda_2)
         b_esquerda.largura = 0
         b_esquerda.altura = 0
 
-        b_direita = Botao("Direita", "r", self.screen, (x*2-70, 620), cinza, cinza_2, preto, direita, direita_2)
+        b_direita = Botao("Direita", self.screen, (x*2-70, 620), cinza, cinza_2, preto, direita, direita_2)
         b_direita.largura = 0
         b_direita.altura = 0
 
-        b_confirmar = Botao("Confirmar", "r", self.screen, (285, 610), cinza, cinza_2, preto, confirmar)
+        b_confirmar = Botao("Confirmar", self.screen, (285, 610), cinza, cinza_2, preto, confirmar)
         b_confirmar.largura = 60
         b_confirmar.altura = 160
 
-        b_cancelar = Botao("Cancelar", "r", self.screen, (x*2-315, 610), cinza, cinza_2, preto, cancelar)
+        b_cancelar = Botao("Cancelar", self.screen, (x*2-315, 610), cinza, cinza_2, preto, cancelar)
         b_cancelar.largura = 60
         b_cancelar.altura = 160
 
-        b_comprar = Botao("Comprar", "r", self.screen, (x-50, 600))
+        b_comprar = Botao("Comprar", self.screen, (x-75, 600))
         b_comprar.largura = 275
         compra = False
 
-        b_selecionar = Botao("Selecionar", "r", self.screen, (x-50, 600))
+        b_selecionar = Botao("Selecionar", self.screen, (x-75, 600))
         b_selecionar.largura = 275
 
-        b_selecionado = Botao("Selecionado", "r", self.screen, (x-50, 600))
+        b_selecionado = Botao("Selecionado", self.screen, (x-75, 600))
         b_selecionado.largura = 275
 
         while rodando:
@@ -493,7 +483,6 @@ class Loja:
                     exit()
 
                 if event.type == pygame.MOUSEBUTTONDOWN:
-                    print(event.button)
                     if event.button == 1:
                         click = True 
 
@@ -577,7 +566,7 @@ class Menu:
         pygame.display.set_caption("Jogo")
         clock = pygame.time.Clock()
 
-        fonte = pygame.font.SysFont("arialblack", 80)
+        #fonte = pygame.font.SysFont("arialblack", 80)
         font = pygame.font.Font('fonte/AGENTORANGE.TTF', 80)
         font_2 = pygame.font.Font('fonte/AGENTORANGE.TTF', 30)
 
@@ -590,11 +579,11 @@ class Menu:
         cinza = (35, 35, 35)
         cinza_2 = (70, 70, 70)
 
-        bt1 = Botao("Jogar", "T", screen, (largura-205, 100), cor_fonte = preto, imagem = nuvem, imagem_2 = nuvem_chuva)
+        bt1 = Botao("Jogar", screen, (largura-205, 100), cor_fonte = preto, imagem = nuvem, imagem_2 = nuvem_chuva)
         bt1.font = font_2
-        bt2 = Botao("Loja", "T", screen, (largura-205, 315), cor_fonte = cinza, imagem = nuvem, imagem_2 = nuvem_chuva)
+        bt2 = Botao("Loja", screen, (largura-205, 315), cor_fonte = cinza, imagem = nuvem, imagem_2 = nuvem_chuva)
         bt2.font = font_2
-        bt3 = Botao("Sair", "T", screen, (largura-205, 530), cor_fonte = cinza_2, imagem = nuvem, imagem_2 = nuvem_chuva)
+        bt3 = Botao("Sair", screen, (largura-205, 530), cor_fonte = cinza_2, imagem = nuvem, imagem_2 = nuvem_chuva)
         bt3.font = font_2
 
         x_centro_nuvem = nuvem_2.get_rect().centerx
@@ -631,7 +620,6 @@ class Menu:
                         exit()
 
                     if event.type == pygame.MOUSEBUTTONDOWN:
-                        print(event.button)
                         if event.button == 1:
                             click = True  
 
@@ -665,12 +653,7 @@ class Menu:
         SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
         MOUSE_SENSITIVITY = 0.1
 
-        pers_selecionado = None
-        for pers in self.lista_pers:
-            if pers.selecionado:
-                pers_selecionado = pers
-                print(pers)
-                break
+        pers_selecionado = self.loja.selecionado()
 
         game = gs.Game(surface=screen, player_speed=PLAYER_SPEED, camera_distance=CAMERA_DISTANCE,
                        gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY, character=pers_selecionado)
