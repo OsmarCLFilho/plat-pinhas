@@ -641,7 +641,7 @@ class Menu:
         self.galinha = "imagens/galinha.png"
         self.elefante = "imagens/Lfant.png"
         self.elefante_gold = "imagens/Lfantgold.png"
-        self.personagem = {"Gala Galinha": ["50", "Uma galinha", True, self.galinha, 15, 1, 30], "Emaperson": ["100", "Pulos longos", False, self.elefante, 35, 1, 30], "Gala Gali": ["500", "És a velocidade", False, self.galinha, 20, 1, 60], "Emapon": ["2000", "Pulos duplos, Pulos dourados", False, self.elefante_gold, 35, 2, 50]}
+        self.personagem = {"Gala Galinha": ["50", "Uma galinha", True, self.galinha, 15, 1, 30], "Emaperson": ["100", "Pulos apresados", False, self.elefante, 35, 1, 50], "Gala Gali": ["500", "És a velocidade", False, self.galinha, 20, 1, 70], "Emapon": ["2000", "Pulos duplos, Pulos dourados", False, self.elefante_gold, 35, 2, 90]}
 
         self.ceu = pygame.image.load("imagens/ceu.png")
         self.nuvem = pygame.image.load("imagens/cloud.png")
@@ -752,7 +752,6 @@ class Menu:
                 exit()
 
             slide += 1 * menos
-            #print(slide)
             if math.fabs(slide) >= 10:
                 menos *= -1
 
@@ -771,7 +770,6 @@ class Menu:
         MOUSE_SENSITIVITY = 0.1
 
         pers_selecionado = self.loja.selecionado()
-        print(pers_selecionado.velocidade)
 
         game = gs.Game(surface=screen, camera_distance=CAMERA_DISTANCE, gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY,
                        character=pers_selecionado)

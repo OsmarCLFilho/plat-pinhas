@@ -3,7 +3,7 @@ import render as rnr
 import copy
 import pygame as pg
 import numpy as np
-from math import pi
+from math import pi, exp
 from loja import Personagem as prs
 
 class Health_bar(pg.sprite.Sprite):
@@ -73,6 +73,9 @@ class Player(Body):
 
 class Obstacle(Body):
     def __init__(self, mesh=None, position=(0, 0, 0), hitbox_size=None, solid=False, timer=10, move_type=None):
+        if timer < 0.5:
+            timer = 0.5
+
         self.timer = timer
         self.hitbox_size = np.array(hitbox_size, dtype=float)
         self.solid = solid
@@ -87,7 +90,7 @@ class Obstacle(Body):
             if distance_start >= 10:
                 self.move_type *= -1
 
-                #clips the distance travelled
+                #clamps the distance travelled
                 self.set_position(self.get_start_position() + 10*(self.get_position() - self.get_start_position())/distance_start)
 
             self.set_position(self.get_position() + time*self.move_type)
@@ -184,7 +187,7 @@ class Game:
         self.game_running = True
 
         points = 0
-        points_rate = 1
+        points_rate = 10
 
         clock = pg.time.Clock()
         clock.tick()
@@ -275,14 +278,14 @@ class Game:
 
                 if np.random.rand() < 0.8:
                     if type(move) == np.ndarray:
-                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + 20*plat_vec_perp/vec_norm, (0, 0, 0), False, 100),))
-                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos - 20*plat_vec_perp/vec_norm, (0, 0, 0), False, 100),))
+                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + 20*plat_vec_perp/vec_norm, (0, 0, 0), False, 10 - 0.01*points),))
+                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos - 20*plat_vec_perp/vec_norm, (0, 0, 0), False, 10 - 0.01*points),))
 
-                    self.space.add_bodies((Obstacle(Meshes.wide_plat_mesh, new_pos, (10, 10, 4), True, 100, move),))
+                    self.space.add_bodies((Obstacle(Meshes.wide_plat_mesh, new_pos, (10, 10, 4), True, 10 - 0.01*points, move),))
 
                 else:
-                    self.space.add_bodies((Obstacle(Meshes.tall_plat_mesh, new_pos, (10, 10, 20), True, 100),))
-                    self.space.add_bodies((Obstacle(None, new_pos, (0,0,0), True, 100),))
+                    self.space.add_bodies((Obstacle(Meshes.tall_plat_mesh, new_pos, (10, 10, 20), True, 10 - 0.01*points),))
+                    self.space.add_bodies((Obstacle(None, new_pos, (0,0,0), True, 10 - 0.01*points),))
 
 
             #Camera work
@@ -303,7 +306,7 @@ class Game:
             displacement = delta_time*self.PLAYER_SPEED*displacement/displacement_norm
 
             self.player.gravity_step(delta_time, self.GRAVITY)
-            if self.player.get_position()[2] < -10:
+            if self.player.get_position()[2] < -100:
                 self.game_running = False
 
             for i in self.space.bodies:
@@ -342,7 +345,7 @@ class Game:
             if self.player.dead():
                 self.game_running = False
 
-            points += (delta_time*points_rate)
+            points += delta_time*points_rate
 
             #Render stuff
             light_source = np.array((1,1,1))
