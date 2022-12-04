@@ -268,6 +268,10 @@ class Personagem:
     @property
     def preco(self):
         return self.__preco
+
+    @preco.setter
+    def preco(self, preco):
+        self.__preco = preco
         
     @property
     def descricao(self):
@@ -329,9 +333,11 @@ class Loja:
         return personagem
 
     
-    def exibir_loja(self):
+    def exibir_loja(self, pontos):
         """Exibe a loja
 
+        Args:
+            pontos (int): Pontos acumulados para serem gastos na loja
         """
 
         def exibir_personagem(tela, personagem, x, y):
@@ -384,13 +390,16 @@ class Loja:
             tela.blit(moldura_2, (x_mold_2, y_preco-15))
 
             if not personagem.comprado:
-                escrever_centralizado(preco, font, cinza_2, tela, x, y_preco)
-            else:
-                escrever_centralizado(preco, font, branco, tela, x, y_preco)
+                if dinheiro >= int(preco) :
+                    escrever_centralizado(preco, font, branco, tela, x, y_preco)
+                else:
+                    escrever_centralizado(preco, font, cinza, tela, x, y_preco)
 
 
         #----------------------------------------------------------------------------
         
+        dinheiro = pontos
+
         clock = pygame.time.Clock()
         rodando = True
     
@@ -413,6 +422,7 @@ class Loja:
         cancelar = pygame.image.load("imagens/X.png")
         nuvem = pygame.image.load("imagens/cloud_3.png")
         nuvem_2 = pygame.image.load("imagens/cloud_5.png")
+        sol = pygame.image.load("imagens/sol.png")
 
         rect_nuvem = nuvem.get_rect()
 
@@ -421,6 +431,7 @@ class Loja:
         preto = (255, 255, 255)
         cinza = (10, 10, 10)
         cinza_2 = (40, 40, 40)
+        branco = (200, 200, 200) 
 
         b_esquerda = Botao("Esquerda", self.screen, (75, 620), imagem = esquerda, imagem_2 =  esquerda_2)
         b_esquerda.largura = 0
@@ -459,10 +470,9 @@ class Loja:
             click_esquerda = False
             click_direita = False
 
-            #self.screen.fill((11,59,70))    # Preenche a tela com um tom de azul
-
-            self.screen.blit(nuvem, (0,0))
-            escrever_centralizado("Loja", font_2, cinza, self.tela, rect_nuvem.centerx, rect_nuvem.centery-20)
+            self.screen.blit(nuvem, (-0,-0))
+            escrever_centralizado("Loja", font_2, branco, self.tela, x, rect_nuvem.centery-20)
+            escrever_centralizado(f"Pontos: {str(dinheiro)}", font_2, cinza, self.tela, rect_nuvem.centerx, rect_nuvem.centery-20)
 
             self.screen.blit(nuvem_2, (2*x-90,0))
             b_sair.draw_image()
@@ -471,6 +481,11 @@ class Loja:
             personagem = self.personagens[index_per]
             exibir_personagem(self.tela, personagem, x + slide, y)
 
+            # Exibe pontos do jogador
+            #self.screen.blit(sol, (x-38,5))
+            
+
+            # Exibe outros personagens
             if index_per > 0: # Exibe um personagem a direita da tela
                 exibir_personagem(self.tela, self.personagens[index_per - 1], 0 + slide, y)
             if index_per > 1: # Exibe um personagem a direita fora da tela para sua visubilidade no slide
@@ -527,8 +542,9 @@ class Loja:
                     b_cancelar.draw_image()     # Exibe o botão de cancelamento da compra
                     if b_cancelar.esta_botao and click:
                         compra = False 
-                    elif b_confirmar.esta_botao and click:
+                    elif (b_confirmar.esta_botao and click) and pontos >= int(personagem.preco):
                         personagem.comprado = True
+                        dinheiro -= int(personagem.preco)
             else:                               # Opções de seleção
                 if not personagem.selecionado:
                     b_selecionar.draw()
@@ -556,6 +572,8 @@ class Loja:
             pygame.display.update()
             clock.tick(60)
 
+        return dinheiro
+
 class Menu:
     def __init__(self):
         self.galinha = "imagens/galinha.png"
@@ -570,6 +588,8 @@ class Menu:
         self.lista_pers[0].selecionado = True
 
         self.loja = Loja(self.lista_pers)
+
+        self.pontos = 0
 
     def menu_principal(self):
         largura, altura = 900, 700
@@ -643,7 +663,7 @@ class Menu:
                 self.jogo(screen)
 
             if bt2.esta_botao_imagem and click:
-                self.loja.exibir_loja()
+                self.pontos = self.loja.exibir_loja(self.pontos)
 
             if bt3.esta_botao_imagem and click:
                 pygame.quit()
@@ -669,3 +689,6 @@ class Menu:
         game = gs.Game(surface=screen, player_speed=PLAYER_SPEED, camera_distance=CAMERA_DISTANCE,
                        gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY, character=pers_selecionado)
         game.start_game()
+
+        self.pontos += 50 
+
