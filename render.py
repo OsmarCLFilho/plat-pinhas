@@ -118,9 +118,16 @@ class Body:
     def __init__(self, mesh=None, position=(0, 0, 0)):
         self.mesh = mesh
         self.position = np.array(position, dtype=float)
+        self.start_pos = np.array(position, dtype=float)
 
     def set_position(self, position):
         self.position = np.array(position, dtype=float)
+
+    def set_start_position(self, position):
+        self.start_pos = np.array(position, dtype=float)
+
+    def get_start_position(self):
+        return self.start_pos
 
     def get_position(self):
         return self.position
