@@ -34,19 +34,20 @@ class Health_bar(pg.sprite.Sprite):
         pg.draw.rect(surface, (255,255,255),(10,10,self.health_bar_length,25),4)
 
 class Player(Body):
-    def __init__(self, size, strength, health, character):
+    def __init__(self, size, health, character):
         #super().__init__(mesh=mesh)
         super().__init__(mesh=character.imagem_endereco)
         #super().__init__(mesh="Lfant.png")
 
         self.size = size
-        self.strength = strength
+        self.strength = character.poder_pulo
         self.hp_bar = pg.sprite.GroupSingle(Health_bar(health))
         self.iframes = 0
         self.healing = 0
         self.camera = Camera()
         self.vertical_speed = 0
-        self.able_to_jump = True
+        self.max_jumps = character.quantd_pulo
+        self.jumps_available = character.quantd_pulo
 
     def dead(self):
         return not bool(self.hp_bar.sprite.health)
@@ -56,9 +57,9 @@ class Player(Body):
         self.set_posz(self.get_position()[2] + time*(self.vertical_speed))
 
     def jump(self):
-        if self.able_to_jump:
+        if self.jumps_available > 0:
             self.vertical_speed = self.strength
-            self.able_to_jump = False
+            self.jumps_available -= 1
 
     def apply_damage(self, amount):
         self.iframes = 10
@@ -76,17 +77,19 @@ class Obstacle(Body):
         self.move_type = move_type
         super().__init__(mesh, position)
 
-    def move(self):
+    def move(self, time):
         if type(self.move_type) != np.ndarray:
             pass
         else:
             distance_start = np.linalg.norm(self.get_position() - self.start_pos)
             if distance_start >= 10:
                 self.move_type *= -1
+
+                #clips the distance travelled
                 self.set_position(self.get_start_position() + 10*(self.get_position() - self.get_start_position())/distance_start)
 
-            self.set_position(self.get_position() + 0.5*self.move_type)
-            return 0.5*self.move_type
+            self.set_position(self.get_position() + time*self.move_type)
+            return time*self.move_type
         return (0,0,0)
 
 def colliding(body, player, space):
@@ -101,7 +104,8 @@ def colliding(body, player, space):
             player.apply_damage(20)
 
         elif body.solid:
-            player.able_to_jump = True
+            current_jumps = player.jumps_available
+            player.jumps_available = player.max_jumps
             ontop = True
             if l - abs(x) < w - abs(y):
                 if l - abs(x) < h - abs(z):
@@ -113,6 +117,8 @@ def colliding(body, player, space):
                 else:
                     player.set_posz(player.get_position()[2] + np.sign(z)*(h-abs(z)))
                     player.vertical_speed = 0
+                    if np.sign(z) == -1:
+                        player.jumps_available = current_jumps
 
             elif l - abs(x) < h - abs(z) or w - abs(y) < h - abs(z):
                 for b in space.bodies:
@@ -123,6 +129,9 @@ def colliding(body, player, space):
             else:
                 player.set_posz(player.get_position()[2] + np.sign(z)*(h-abs(z)))
                 player.vertical_speed = 0
+                if np.sign(z) == -1:
+                    player.jumps_available = current_jumps
+
     return ontop
 
 def rotation(theta):
@@ -137,10 +146,11 @@ class Meshes:
     tall_plat_mesh = PlatMesh(10, 10, 12)
 
 class Game:
-    def __init__(self, surface, player_speed, camera_distance, gravity, mouse_sensitivity, character):
+    def __init__(self, surface, camera_distance, gravity, mouse_sensitivity, character):
         self.surface = surface
 
-        self.PLAYER_SPEED = player_speed
+        self.PLAYER_SPEED = character.velocidade
+        print(self.PLAYER_SPEED)
         self.CAMERA_DISTANCE = camera_distance
         self.GRAVITY = gravity
         self.MOUSE_SENSITIVITY = mouse_sensitivity
@@ -148,7 +158,7 @@ class Game:
         #---
         self.character = character
 
-        self.player = Player(size=2, strength=15, health=100, character=self.character)
+        self.player = Player(size=2, health=100, character=self.character)
         #---
 
         first_platform = Obstacle(Meshes.plat_mesh, (0, 0, -5), (5, 5, 4), True)
@@ -177,7 +187,7 @@ class Game:
 
         while self.game_running:
             #Events stuff
-            clock.tick(30)
+            clock.tick(60)
             delta_time = clock.get_time()/1000
 
             if pg.event.peek(eventtype=pg.QUIT, pump=True):
@@ -256,7 +266,7 @@ class Game:
                 h = np.random.choice([0,4,-4])
                 move = 0
                 if np.random.rand() < 0.2:
-                    move = plat_vec_perp/np.linalg.norm(plat_vec)
+                    move = 10*plat_vec_perp/np.linalg.norm(plat_vec)
 
                 if np.random.rand() < 0.8:
                     if type(move) == np.ndarray:
@@ -279,21 +289,20 @@ class Game:
 
             displacement = np.array([(direction[0] - direction[2])*self.player.camera.costhe + (direction[3] - direction[1])*self.player.camera.sinthe,
                                      (direction[0] - direction[2])*self.player.camera.sinthe - (direction[3] - direction[1])*self.player.camera.costhe,
-                                     0])*delta_time*self.PLAYER_SPEED
+                                     0])
 
             displacement_norm = np.linalg.norm(displacement, ord=2)
             if displacement_norm == 0:
                 displacement_norm = 1
 
-            displacement = displacement/displacement_norm
+            displacement = delta_time*self.PLAYER_SPEED*displacement/displacement_norm
 
             self.player.gravity_step(delta_time, self.GRAVITY)
 
-            self.player.able_to_jump = False
             for i in self.space.bodies:
                 if type(i) == Obstacle:
                     ontop = colliding(i, self.player, self.space)
-                    move = i.move()
+                    move = i.move(delta_time)
                     if ontop:
                         displacement += move
 
@@ -302,7 +311,6 @@ class Game:
                     i.set_position(i.get_position() - displacement)
                     i.set_start_position(i.get_start_position() - displacement)
 
-            #self.player.able_to_jump = False
             #for i in self.space.bodies:
                 #if type(i) == Obstacle:
                     #colliding(i, self.player, self.space)

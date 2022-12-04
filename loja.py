@@ -275,7 +275,7 @@ class Botao () :
 
 
 class Personagem:
-    def __init__(self, nome, atributos = ["9999", "Não existe", False, "imagens/error_char.png"], selecionado = False):
+    def __init__(self, nome, atributos = ["9999", "Não existe", False, "imagens/error_char.png", 15, 1, 10], selecionado = False):
         """Inicialização da classe
 
         Args:
@@ -289,9 +289,23 @@ class Personagem:
         self.__descricao = atributos[1]
         self.__comprado = atributos[2]
         self.__imagem = atributos[3]
+        self.__poder_pulo = atributos[4]
+        self.__quantd_pulo = atributos[5]
+        self.__velocidade = atributos[6]
         self.__selecionado = selecionado
 
-    
+    @property
+    def poder_pulo(self):
+        return self.__poder_pulo
+
+    @property
+    def quantd_pulo(self):
+        return self.__quantd_pulo
+
+    @property
+    def velocidade(self):
+        return self.__velocidade
+ 
     @property
     def nome(self):
         return self.__nome
@@ -627,7 +641,7 @@ class Menu:
         self.galinha = "imagens/galinha.png"
         self.elefante = "imagens/Lfant.png"
         self.elefante_gold = "imagens/Lfantgold.png"
-        self.personagem = {"Gala Galinha": ["50", "Consegue dar pulos duplos", True, self.galinha], "Emaperson": ["100", "Pulos longos", False, self.elefante], "Gala Gali": ["500", "Consegue mais pontos", False, self.galinha], "Emapon": ["5000", "É shine", False, self.elefante_gold]}
+        self.personagem = {"Gala Galinha": ["50", "Uma galinha", True, self.galinha, 15, 1, 30], "Emaperson": ["100", "Pulos longos", False, self.elefante, 35, 1, 30], "Gala Gali": ["500", "És a velocidade", False, self.galinha, 20, 1, 60], "Emapon": ["2000", "Pulos duplos, Pulos dourados", False, self.elefante_gold, 35, 2, 50]}
 
         self.ceu = pygame.image.load("imagens/ceu.png")
         self.nuvem = pygame.image.load("imagens/cloud.png")
@@ -751,16 +765,16 @@ class Menu:
         import dev_game as gs #game src
         import menu as mn
 
-        PLAYER_SPEED = 10
         CAMERA_DISTANCE = 15
         GRAVITY = 40
         SCREEN_WIDTH, SCREEN_HEIGHT = 900, 700
         MOUSE_SENSITIVITY = 0.1
 
         pers_selecionado = self.loja.selecionado()
+        print(pers_selecionado.velocidade)
 
-        game = gs.Game(surface=screen, player_speed=PLAYER_SPEED, camera_distance=CAMERA_DISTANCE,
-                       gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY, character=pers_selecionado)
+        game = gs.Game(surface=screen, camera_distance=CAMERA_DISTANCE, gravity=GRAVITY, mouse_sensitivity=MOUSE_SENSITIVITY,
+                       character=pers_selecionado)
         game.start_game()
 
         self.pontos += 50 
@@ -793,7 +807,7 @@ class Menu:
             anna = Botao("Anna", screen, (x + slide-150, 100), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
             fidel = Botao("Fidel", screen, (x - slide-50, 250), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
             george = Botao("Geroge", screen, (x + slide+50, 400), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
-            george.som = "audio\Pickup_Coin.wav"
+            george.som = "audio/Pickup_Coin.wav"
             osmar = Botao("Osmar", screen, (x - slide+150, 550), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
 
             anna.draw_image()
@@ -846,5 +860,3 @@ class Menu:
                         
             pygame.display.update()
             clock.tick(60)
-
-
