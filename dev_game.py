@@ -81,7 +81,6 @@ class Obstacle(Body):
             pass
         else:
             distance_start = np.linalg.norm(self.get_position() - self.start_pos)
-            print(distance_start)
             if distance_start >= 10:
                 self.move_type *= -1
                 self.set_position(self.get_start_position() + 10*(self.get_position() - self.get_start_position())/distance_start)
@@ -187,7 +186,6 @@ class Game:
             events = pg.event.get(pump=True)
 
             for e in events:
-                print(e)
                 if e.type == pg.KEYDOWN:
                     #key w
                     if e.key == 119:
