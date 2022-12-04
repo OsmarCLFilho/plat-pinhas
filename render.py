@@ -135,11 +135,20 @@ class Body:
     def set_posx(self, x):
         self.position[0] = x
 
+    def set_start_posx(self, x):
+        self.start_pos[0] = x
+
     def set_posy(self, y):
         self.position[1] = y
 
+    def set_start_posy(self, y):
+        self.start_pos[1] = y
+
     def set_posz(self, z):
         self.position[2] = z
+
+    def set_start_posz(self, z):
+        self.start_pos[2] = z
 
 #Render package
 class Space:
