@@ -453,7 +453,6 @@ class Loja:
         cancelar = pygame.image.load("imagens/X.png")
         nuvem = pygame.image.load("imagens/cloud_3.png")
         nuvem_2 = pygame.image.load("imagens/cloud_5.png")
-        sol = pygame.image.load("imagens/sol.png")
 
         rect_nuvem = nuvem.get_rect()
 
@@ -462,7 +461,7 @@ class Loja:
         preto = (255, 255, 255)
         cinza = (10, 10, 10)
         cinza_2 = (40, 40, 40)
-        branco = (200, 200, 200) 
+        branco = (230, 230, 230) 
 
         b_esquerda = Botao("Esquerda", self.screen, (75, 620), imagem = esquerda, imagem_2 =  esquerda_2)
         b_esquerda.largura = 0
@@ -790,8 +789,6 @@ class Menu:
             screen.blit(self.ceu, (0,0))
             screen.blit(nuvem_2, (2*x-90,0))
             b_sair.draw_image()
-
-            escrever_texto('game', screen, 20, 20, font, (255, 255, 255))
 
             anna = Botao("Anna", screen, (x + slide-150, 100), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
             fidel = Botao("Fidel", screen, (x - slide-50, 250), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
