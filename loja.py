@@ -67,6 +67,7 @@ class Botao () :
             self.__imagem_2 = imagem_2
         else:
             self.__imagem_2 = imagem
+        self.__som = pygame.mixer.Sound('audio/Select.wav')
         
         self.__font = pygame.font.SysFont("arialblack", 30) 
         self.__tamanho_botao = 1
@@ -113,24 +114,6 @@ class Botao () :
     @property
     def cor_fonte(self):
         return self.__cor_fonte
-
-    @property
-    def esta_botao(self):
-        esta_botao = False
-        pos_mou = pygame.mouse.get_pos()
-        esta_botao = self.rect.collidepoint(pos_mou)
-
-        self.__esta_botao = esta_botao
-        return self.__esta_botao
-
-    @property
-    def esta_botao_imagem(self):
-        esta_botao = False
-        pos_mou = pygame.mouse.get_pos()
-        esta_botao = self.rect_imagem.collidepoint(pos_mou)
-
-        self.__esta_botao_imagem = esta_botao
-        return self.__esta_botao_imagem
 
     @property
     def font(self):
@@ -204,6 +187,20 @@ class Botao () :
         return pygame.Rect(x, y, lar, alt)
 
     @property
+    def som(self):
+        return self.__som
+        
+
+    @som.setter
+    def som(self, som):
+        """ Setter do som
+
+        Args:
+            som (str): Endereço do som
+        """
+        self.__som = pygame.mixer.Sound(som)
+
+    @property
     def tamanho_botao(self):
         return self.__tamanho_botao
 
@@ -220,7 +217,7 @@ class Botao () :
         return self.font.render(self.conteudo_texto, True, self.cor_fonte)
 
     def draw(self):
-        cor = self.cor_botao[self.esta_botao]
+        cor = self.cor_botao[self.mouse_botao()]
 
         pygame.draw.rect(self.tela, self.borda_cor, self.rect_borda)
         pygame.draw.rect(self.tela, cor, self.rect)
@@ -234,13 +231,47 @@ class Botao () :
 
         escrever_centralizado(self.conteudo_texto, self.font, self.cor_fonte, self.tela, x, y)
 
+    def mouse_botao(self):
+        esta_mouse = False
+
+        pos_mou = pygame.mouse.get_pos()
+        esta_mouse = self.rect.collidepoint(pos_mou)
+
+        return esta_mouse
+
+    def mouse_imagem(self):
+        esta_mouse = False
+
+        pos_mou = pygame.mouse.get_pos()
+        esta_mouse = self.rect_imagem.collidepoint(pos_mou)
+
+        return esta_mouse
+
+
+    def esta_botao(self, click):
+        esta_botao = self.mouse_botao()
+
+        no_botao = esta_botao and click
+
+        return no_botao
+
+    def esta_imagem(self, click):
+        esta_imagem = self.mouse_imagem()
+
+        na_imagem = esta_imagem and click
+
+        return na_imagem
+
     def draw_image(self):
-        imagem = self.imagens[self.esta_botao_imagem]
+        imagem = self.imagens[self.mouse_imagem()]
 
         x = self.rect.centerx - imagem.get_width()/2
         y = self.rect.centery - imagem.get_height()/2
 
         self.tela.blit(imagem,(x, y))
+
+    def tocar_som(self):
+        self.som.play()
 
 
 class Personagem:
@@ -528,45 +559,63 @@ class Loja:
                     index_per += 1 * ativar_slide
                     ativar_slide = 0
                 compra = False
-            # Os botões relacionados a compra serão exibidos apenas quando o slide não estiver acontecendo
+            # Os botões relacionados a compra serão exibidos 
+            # apenas quando o slide não estiver acontecendo
             elif not personagem.comprado:       # Opções de compra
                 if not compra:
                     b_comprar.draw()            # Exibe o botão de compra
                     b_comprar.escrever()
-                    if b_comprar.esta_botao and click:
+                    
+                    if b_comprar.esta_botao(click):
+                        b_comprar.tocar_som()
                         compra = True
                 else:
                     b_confirmar.draw()
                     b_confirmar.draw_image()    # Exibe o botão de confirmação da compra 
+                    
                     b_cancelar.draw()       
                     b_cancelar.draw_image()     # Exibe o botão de cancelamento da compra
-                    if b_cancelar.esta_botao and click:
+
+                    if b_cancelar.esta_botao(click):
+                        b_confirmar.tocar_som()
                         compra = False 
-                    elif (b_confirmar.esta_botao and click) and pontos >= int(personagem.preco):
+                    elif (b_confirmar.esta_botao(click)) and pontos >= int(personagem.preco):
+                        b_cancelar.tocar_som()
                         personagem.comprado = True
                         dinheiro -= int(personagem.preco)
+            # Os botões relacionados a selecionar o personagem serão
+            # exibidos apenas se o personagem já foi comprado
             else:                               # Opções de seleção
                 if not personagem.selecionado:
                     b_selecionar.draw()
                     b_selecionar.escrever()
-                    if b_selecionar.esta_botao and click:
+                    if b_selecionar.esta_botao(click):
+                        b_selecionar.tocar_som()
                         for pers in self.personagens:
                             pers.selecionado = False
-                        personagem.selecionado = True 
+                        personagem.selecionado = True
                 else:
                     b_selecionado.draw()
                     b_selecionado.escrever()
 
             # Verfica se o botão ou se a seta para esquerda foram pressionados
-            if (b_esquerda.esta_botao_imagem and click) or click_esquerda:
+            if (b_esquerda.esta_imagem(click)) or click_esquerda:
                 if index_per > 0 and ativar_slide == 0:
                     ativar_slide = -1
+                # Tocar som
+                if b_esquerda.esta_imagem(click):
+                    b_esquerda.tocar_som()
             # Verfica se o botão ou se a seta para direita foram pressionados
-            elif (b_direita.esta_botao_imagem and click) or click_direita:
+            elif (b_direita.esta_imagem(click)) or click_direita:
                 if index_per < tamanho_loja - 1 and ativar_slide == 0:
                     ativar_slide = 1  
+                # Tocar som
+                if b_direita.esta_imagem(click):
+                    b_direita.tocar_som()
 
-            if b_sair.esta_botao_imagem and click:
+
+            if b_sair.esta_imagem(click):
+                b_sair.tocar_som()  # Tocar som
                 rodando = False
                         
             pygame.display.update()
@@ -580,6 +629,10 @@ class Menu:
         self.elefante = "imagens/Lfant.png"
         self.elefante_gold = "imagens/Lfantgold.png"
         self.personagem = {"Gala Galinha": ["50", "Consegue dar pulos duplos", True, self.galinha], "Emaperson": ["100", "Pulos longos", False, self.elefante], "Gala Gali": ["500", "Consegue mais pontos", False, self.galinha], "Emapon": ["5000", "É shine", False, self.elefante_gold]}
+
+        self.ceu = pygame.image.load("imagens/ceu.png")
+        self.nuvem = pygame.image.load("imagens/cloud.png")
+        self.nuvem_chuva = pygame.image.load("imagens/cloud_rain.png")
 
         self.lista_pers = []
         for nome, atributo in self.personagem.items():
@@ -601,21 +654,14 @@ class Menu:
         font = pygame.font.Font('fonte/AGENTORANGE.TTF', 80)
         font_2 = pygame.font.Font('fonte/AGENTORANGE.TTF', 30)
 
-        ceu = pygame.image.load("imagens/ceu.png")
-        nuvem = pygame.image.load("imagens/cloud.png")
-        nuvem_chuva = pygame.image.load("imagens/cloud_rain.png")
         nuvem_2 = pygame.image.load("imagens/cloud_2.png")
 
         preto = (0, 0, 0)
         cinza = (35, 35, 35)
         cinza_2 = (70, 70, 70)
 
-        bt1 = Botao("Jogar", screen, (largura-205, 100), cor_fonte = preto, imagem = nuvem, imagem_2 = nuvem_chuva)
-        bt1.font = font_2
-        bt2 = Botao("Loja", screen, (largura-205, 315), cor_fonte = cinza, imagem = nuvem, imagem_2 = nuvem_chuva)
-        bt2.font = font_2
-        bt3 = Botao("Sair", screen, (largura-205, 530), cor_fonte = cinza_2, imagem = nuvem, imagem_2 = nuvem_chuva)
-        bt3.font = font_2
+        slide = 0
+        menos = 1
 
         x_centro_nuvem = nuvem_2.get_rect().centerx
         y_centro_nuvem = nuvem_2.get_rect().centery
@@ -624,12 +670,24 @@ class Menu:
 
             click = False
 
-            screen.fill((20,20,20))
-            screen.blit(ceu, (0,0))
+            x_botao = largura-210+slide
+            x_botao_2 = largura-210-slide
 
-            screen.blit(nuvem_2, (25,25))
-            escrever_centralizado("Plat", font, cinza_2, screen, x_centro_nuvem+25, y_centro_nuvem - 70)
-            escrever_centralizado("Pinhas", font, cinza, screen, x_centro_nuvem+25, y_centro_nuvem + 30)
+            bt1 = Botao("Jogar", screen, (x_botao, 60), cor_fonte = preto, imagem = self.nuvem, imagem_2 = self.nuvem_chuva)
+            bt1.font = font_2
+            bt2 = Botao("Loja", screen, (x_botao_2, 235), cor_fonte = cinza, imagem = self.nuvem, imagem_2 = self.nuvem_chuva)
+            bt2.font = font_2
+            bt3 = Botao("Creditos", screen, (x_botao, 410), cor_fonte = cinza_2, imagem = self.nuvem, imagem_2 = self.nuvem_chuva)
+            bt3.font = font_2
+            bt4 = Botao("Sair", screen, (x_botao_2, 585), cor_fonte = cinza_2, imagem = self.nuvem, imagem_2 = self.nuvem_chuva)
+            bt4.font = font_2
+
+            screen.fill((20,20,20))
+            screen.blit(self.ceu, (0,0))
+
+            screen.blit(nuvem_2, (25,25-slide))
+            escrever_centralizado("Plat", font, cinza_2, screen, x_centro_nuvem+25, y_centro_nuvem-slide - 70)
+            escrever_centralizado("Pinhas", font, cinza, screen, x_centro_nuvem+25, y_centro_nuvem-slide + 30)
 
             # Exibe botão "Jogar"
             bt1.draw_image()
@@ -639,9 +697,13 @@ class Menu:
             bt2.draw_image()
             bt2.escrever(y_varia = 10)
 
-            # Exibe botão "Sair"
+            # Exibe botão "Creditos"
             bt3.draw_image()
             bt3.escrever(y_varia = 10)
+
+            # Exibe botão "Sair"
+            bt4.draw_image()
+            bt4.escrever(y_varia = 10)
 
             pos_mou = pygame.mouse.get_pos()
 
@@ -659,15 +721,27 @@ class Menu:
                             pygame.quit()
                             exit()
 
-            if bt1.esta_botao_imagem and click:
+            if bt1.esta_imagem(click):
+                bt1.tocar_som()
                 self.jogo(screen)
 
-            if bt2.esta_botao_imagem and click:
+            if bt2.esta_imagem(click):
+                bt2.tocar_som()
                 self.pontos = self.loja.exibir_loja(self.pontos)
 
-            if bt3.esta_botao_imagem and click:
+            if bt3.esta_imagem(click):
+                bt3.tocar_som()
+                self.creditos(screen)
+
+            if bt4.esta_imagem(click):
+                bt4.tocar_som()
                 pygame.quit()
                 exit()
+
+            slide += 1 * menos
+            #print(slide)
+            if math.fabs(slide) >= 10:
+                menos *= -1
 
             pygame.display.update()
             clock.tick(60)
@@ -691,4 +765,89 @@ class Menu:
         game.start_game()
 
         self.pontos += 50 
+
+    def creditos(self, screen):
+        clock = pygame.time.Clock()
+        rodando = True
+
+        font = pygame.font.SysFont(None, 20)
+        font_2 = pygame.font.Font('fonte/AGENTORANGE.TTF', 30)
+
+        sair = pygame.image.load("imagens/sair.png")
+        sair_2 = pygame.image.load("imagens/sair_2.png")
+        nuvem_2 = pygame.image.load("imagens/cloud_5.png")
+
+        x = screen.get_width()/2
+        slide = 0
+        menos = 1
+
+        b_sair = Botao("Sair", screen, (2*x-100, 20), imagem = sair, imagem_2 = sair_2)
+
+        while rodando:
+
+            click = False
+
+            screen.blit(self.ceu, (0,0))
+            screen.blit(nuvem_2, (2*x-90,0))
+            b_sair.draw_image()
+
+            escrever_texto('game', screen, 20, 20, font, (255, 255, 255))
+
+            anna = Botao("Anna", screen, (x + slide-150, 100), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+            fidel = Botao("Fidel", screen, (x - slide-50, 250), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+            george = Botao("Geroge", screen, (x + slide+50, 400), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+            george.som = "audio\Pickup_Coin.wav"
+            osmar = Botao("Osmar", screen, (x - slide+150, 550), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+
+            anna.draw_image()
+            anna.font = font_2
+            anna.escrever(y_varia = 10)
+
+            # Exibe botão "Loja"
+            fidel.draw_image()
+            fidel.font = font_2
+            fidel.escrever(y_varia = 10)
+
+            # Exibe botão "Creditos"
+            george.draw_image()
+            george.font = font_2
+            george.escrever(y_varia = 10)
+
+            # Exibe botão "Sair"
+            osmar.draw_image()
+            osmar.font = font_2
+            osmar.escrever(y_varia = 10)
+
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if event.button == 1:
+                        click = True 
+                if event.type == pygame.QUIT:
+                    pygame.quit()
+                    exit()
+                if event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE:
+                        rodando = False
+
+            if anna.esta_imagem(click):
+                anna.tocar_som()  # Tocar som
+            elif fidel.esta_imagem(click):
+                fidel.tocar_som()  # Tocar som
+            elif george.esta_imagem(click):
+                george.tocar_som()  # Tocar som
+            elif osmar.esta_imagem(click):
+                osmar.tocar_som()  # Tocar som
+
+            if b_sair.esta_imagem(click):
+                b_sair.tocar_som()  # Tocar som
+                rodando = False
+
+            slide += 1 * menos
+            if math.fabs(slide) >= 30:
+                menos *= -1
+
+                        
+            pygame.display.update()
+            clock.tick(60)
+
 

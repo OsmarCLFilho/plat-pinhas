@@ -6,5 +6,3 @@ pygame.init()
 
 menu = Menu()
 menu.menu_principal()
-
-pygame.quit()
