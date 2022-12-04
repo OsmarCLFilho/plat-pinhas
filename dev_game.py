@@ -81,12 +81,12 @@ class Obstacle(Body):
             pass
         else:
             distance_start = np.linalg.norm(self.get_position() - self.start_pos)
+            print(distance_start)
             if distance_start >= 10:
                 self.move_type *= -1
                 self.set_position(self.get_start_position() + 10*(self.get_position() - self.get_start_position())/distance_start)
 
             self.set_position(self.get_position() + 0.5*self.move_type)
-            print(self.move_type)
             return 0.5*self.move_type
         return (0,0,0)
 
@@ -109,6 +109,7 @@ def colliding(body, player, space):
                     for b in space.bodies:
                         if type(b) == Obstacle:
                             b.set_posx(b.get_position()[0] - np.sign(x)*(l-abs(x)))
+                            b.set_start_posx(b.get_start_position()[0] - np.sign(x)*(l-abs(x)))
 
                 else:
                     player.set_posz(player.get_position()[2] + np.sign(z)*(h-abs(z)))
@@ -118,6 +119,7 @@ def colliding(body, player, space):
                 for b in space.bodies:
                     if type(b) == Obstacle:
                         b.set_posy(b.get_position()[1] - np.sign(y)*(w-abs(y)))
+                        b.set_start_posy(b.get_start_position()[1] - np.sign(y)*(w-abs(y)))
 
             else:
                 player.set_posz(player.get_position()[2] + np.sign(z)*(h-abs(z)))
@@ -153,7 +155,7 @@ class Game:
         first_platform = Obstacle(Meshes.plat_mesh, (0, 0, -5), (5, 5, 4), True)
         bodies = [self.player, first_platform]
 
-        self.space = Space(bodies, plat_spawn_timer=1)
+        self.space = Space(bodies, plat_spawn_timer=0.5)
 
         self.game_running = False
 
@@ -259,14 +261,14 @@ class Game:
 
                 if np.random.rand() < 0.8:
                     if type(move) == np.ndarray:
-                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + (0,0,h) + plat_vec_perp, (0, 0, 0), False, 10),))
-                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + (0,0,h) - plat_vec_perp, (0, 0, 0), False, 10),))
+                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + (0,0,h) + plat_vec_perp, (0, 0, 0), False, 100),))
+                        self.space.add_bodies((Obstacle(Meshes.oct_mesh, new_pos + (0,0,h) - plat_vec_perp, (0, 0, 0), False, 100),))
 
-                    self.space.add_bodies((Obstacle(Meshes.wide_plat_mesh, new_pos + (0,0,h), (10, 10, 4), True, 10, move),))
+                    self.space.add_bodies((Obstacle(Meshes.wide_plat_mesh, new_pos + (0,0,h), (10, 10, 4), True, 100, move),))
 
                 else:
-                    self.space.add_bodies((Obstacle(Meshes.tall_plat_mesh, new_pos + (0,0,8), (10, 10, 12), True, 10),))
-                    self.space.add_bodies((Obstacle(None, new_pos + (0,0,12), (0,0,0), True, 10),))
+                    self.space.add_bodies((Obstacle(Meshes.tall_plat_mesh, new_pos + (0,0,8), (10, 10, 12), True, 100),))
+                    self.space.add_bodies((Obstacle(None, new_pos + (0,0,12), (0,0,0), True, 100),))
 
 
             #Camera work
@@ -300,6 +302,12 @@ class Game:
                 if type(i) == Obstacle:
                     i.set_position(i.get_position() - displacement)
                     i.set_start_position(i.get_start_position() - displacement)
+
+            #self.player.able_to_jump = False
+            #for i in self.space.bodies:
+                #if type(i) == Obstacle:
+                    #colliding(i, self.player, self.space)
+                    #i.move()
 
             camera_pos = np.array([-self.CAMERA_DISTANCE*self.player.camera.cosphi*self.player.camera.costhe,
                                    -self.CAMERA_DISTANCE*self.player.camera.cosphi*self.player.camera.sinthe,
