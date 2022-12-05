@@ -25,3 +25,9 @@ Ao decorrer do jogo um dos seguinte três tipos de plataformas serão geradas al
 - **Emaperson**: Personagem disponível na loja por 100 pontos, pulo bem mais alto e velocidade maior, mas ainda mais lenta que as plataformas. 
 - **Gala Gali**: Personagem disponível na loja por 500 pontos, pulo fraco e velocidade bem maior, que irá permitir ir mais rápido que as plataformas.
 - **Emapon**: Personagem disponível na loja por 200 pontos, pulo bem mais alto e velocidade bem maior.
+
+## Código
+- **render.py**: Calcula os triângulos das mesh dentro do espaço, projeta elas na tela e define a ordem em que são renderizadas.
+- **game.py**: Contém a lógica do jogo, que se encarrega de de calcular coisas como colisões com o jogador e as posições de cada objeto dentro do espaço, usando as classes do render.py.
+- **loja.py**: Se encarrega de desenhar na tela os diferentes menu e da navegação entre eles e o jogo em si.
+- **jogo.py**: Se encarrega de iniciar o jogo, chamando o menu principal.
