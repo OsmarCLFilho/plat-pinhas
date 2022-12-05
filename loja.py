@@ -190,7 +190,8 @@ class Botao () :
 
     @property
     def som(self):
-        return self.__som
+        if pygame.mixer.get_init() != None:
+            return self.__som
         
 
     @som.setter
@@ -274,7 +275,8 @@ class Botao () :
         self.tela.blit(imagem,(x, y))
 
     def tocar_som(self):
-        self.som.play()
+        if pygame.mixer.get_init() != None:
+            self.som.play()
 
 
 class Personagem:
