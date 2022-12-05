@@ -1,4 +1,9 @@
 # plat-pinhas
+
+[![Documentation Status](https://readthedocs.org/projects/plat-pinhas/badge/?version=latest)](https://plat-pinhas.readthedocs.io/en/latest/?badge=latest)
+
+* [Documentação](http://plat-pinhas.readthedocs.io/)
+
 ## Objetivo do Jogo
 O objetivo deste jogo é sobreviver o maior tempo possível, pulando da plataforma atual para a plataforma seguinte, caso o tempo acabe ou o personagem caia o jogo termina.
 ## Controles
