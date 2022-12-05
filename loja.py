@@ -648,7 +648,7 @@ class Menu:
         self.galinha_2 = "imagens/galinha_2.png"
         self.elefante = "imagens/Lfant.png"
         self.elefante_gold = "imagens/Lfantgold.png"
-        self.personagem = {"Gala Galinha": ["50", "Uma galinha", True, self.galinha, 15, 1, 30], "Emaperson": ["100", "Pulos apresados", False, self.elefante, 35, 1, 50], "Gala Gali": ["500", "És a velocidade", False, self.galinha_2, 20, 1, 70], "Emapon": ["2000", "Pulos duplos, Pulos dourados", False, self.elefante_gold, 35, 2, 90]}
+        self.personagem = {"Gala Galinha": ["50", "Uma galinha", True, self.galinha, 15, 1, 30], "Emaperson": ["100", "Pulos apressados", False, self.elefante, 35, 1, 50], "Gala Gali": ["500", "És a velocidade", False, self.galinha_2, 20, 1, 70], "Emapon": ["2000", "Pulos duplos, Pulos dourados", False, self.elefante_gold, 35, 2, 90]}
 
         self.ceu = pygame.image.load("imagens/ceu.png")
         self.nuvem = pygame.image.load("imagens/cloud.png")
