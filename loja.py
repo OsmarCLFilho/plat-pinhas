@@ -659,6 +659,9 @@ class Menu:
         self.pontos = 0
 
     def menu_principal(self):
+        pygame.mixer.music.load("audio/voxel_revolution.mp3")
+        pygame.mixer.music.play(loops=-1)
+
         largura, altura = 900, 700
         screen = pygame.display.set_mode((largura, altura))
         pygame.display.set_caption("Jogo")
@@ -762,7 +765,7 @@ class Menu:
     def jogo(self, screen):
         import pygame as pg
         import numpy as np
-        import dev_game as gs #game src
+        import game as gs #game src
         import menu as mn
 
         CAMERA_DISTANCE = 15
