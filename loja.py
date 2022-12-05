@@ -3,7 +3,7 @@ import pygame, sys
 from pygame.locals import *
 
 
-def escrever_texto(texto, superficie, x, y, fonte, color = (255, 255, 255)):
+def escrever_texto(texto, fonte, superficie, x, y, color = (255, 255, 255)):
         """Escreve um texto na tela
 
         Args:
@@ -93,6 +93,10 @@ class Botao () :
     @property
     def conteudo_texto(self):
         return self.__conteudo_texto 
+
+    @conteudo_texto.setter
+    def conteudo_texto(self, texto):
+        self.__conteudo_texto  = texto
 
     @property
     def coordenada(self):
@@ -659,8 +663,9 @@ class Menu:
         self.pontos = 0
 
     def menu_principal(self):
-        pygame.mixer.music.load("audio/voxel_revolution.mp3")
+        pygame.mixer.music.load("audio/voxel_revolution.wav") 
         pygame.mixer.music.play(loops=-1)
+        pygame.mixer.music.set_volume(0.1)
 
         largura, altura = 900, 700
         screen = pygame.display.set_mode((largura, altura))
@@ -783,13 +788,15 @@ class Menu:
         clock = pygame.time.Clock()
         rodando = True
 
-        font = pygame.font.SysFont(None, 20)
+        font = pygame.font.Font("fonte/AGENTORANGE.TTF", 20)
         font_2 = pygame.font.Font('fonte/AGENTORANGE.TTF', 30)
 
         sair = pygame.image.load("imagens/sair.png")
         sair_2 = pygame.image.load("imagens/sair_2.png")
         nuvem_2 = pygame.image.load("imagens/cloud_5.png")
 
+        george_texto = "Geroge"
+        george_som = "audio/Pickup_Coin.wav"
         x = screen.get_width()/2
         slide = 0
         menos = 1
@@ -804,30 +811,44 @@ class Menu:
             screen.blit(nuvem_2, (2*x-90,0))
             b_sair.draw_image()
 
-            anna = Botao("Anna", screen, (x + slide-150, 100), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
-            fidel = Botao("Fidel", screen, (x - slide-50, 250), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
-            george = Botao("Geroge", screen, (x + slide+50, 400), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
-            george.som = "audio/Pickup_Coin.wav"
-            osmar = Botao("Osmar", screen, (x - slide+150, 550), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+            escrever_texto("Criadores:", font, screen, x - 300 - slide, 20)
+            anna = Botao("Anna", screen, (x + slide - 325, 100), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+            fidel = Botao("Fidel", screen, (x + slide - 170, 260), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+            george = Botao(george_texto, screen, (x - slide + 125, 120), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+            george.som = george_som
+            osmar = Botao("Osmar", screen, (x - slide + 220, 280), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
 
+            x_kevin = x - slide 
+            y_kevin = 550 
+
+            escrever_texto("Musica -", font, screen, x_kevin - 300, y_kevin-115)
+            escrever_texto("Vexel Revolution:", font, screen, x_kevin- 250, y_kevin-80)
+            kevin = Botao("Kevin MacLeod", screen, (x_kevin, y_kevin), imagem = self.nuvem, imagem_2 = self.nuvem_chuva, cor_fonte = (0,0,0))
+
+            # Exibe botão "Anna"
             anna.draw_image()
             anna.font = font_2
             anna.escrever(y_varia = 10)
 
-            # Exibe botão "Loja"
+            # Exibe botão "Fidel"
             fidel.draw_image()
             fidel.font = font_2
             fidel.escrever(y_varia = 10)
 
-            # Exibe botão "Creditos"
+            # Exibe botão "George"
             george.draw_image()
             george.font = font_2
             george.escrever(y_varia = 10)
 
-            # Exibe botão "Sair"
+            # Exibe botão "Osmar"
             osmar.draw_image()
             osmar.font = font_2
             osmar.escrever(y_varia = 10)
+
+            # Exibe botão "Kevin"
+            kevin.draw_image()
+            kevin.font = font
+            kevin.escrever(y_varia = 10)
 
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONDOWN:
@@ -846,8 +867,12 @@ class Menu:
                 fidel.tocar_som()  # Tocar som
             elif george.esta_imagem(click):
                 george.tocar_som()  # Tocar som
+                george_texto = "George"
+                george_som = "audio/Select.wav"
             elif osmar.esta_imagem(click):
                 osmar.tocar_som()  # Tocar som
+            elif kevin.esta_imagem(click):
+                kevin.tocar_som()  # Tocar som
 
             if b_sair.esta_imagem(click):
                 b_sair.tocar_som()  # Tocar som
