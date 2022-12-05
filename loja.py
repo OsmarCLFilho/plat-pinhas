@@ -45,7 +45,7 @@ class Botao () :
             texto (str): Texto do botão
             tela (pygame.Surface):  Janela do botão
             coordenada (tuple):     Tupla contendo 2 inteiros 
-                                    representandos as coordenadas do mouse
+                                    representandos as coordenadas do botão
             cor_botao_1 (tuple):    Tupla contendo 3 numeros de 0 a 255,
                                     informando as cores em RGB do botão
             cor_botao_2 (tuple):    Tupla contendo 3 numeros de 0 a 255,
@@ -229,9 +229,6 @@ class Botao () :
 
         pygame.draw.rect(self.tela, self.borda_cor, self.rect_borda)
         pygame.draw.rect(self.tela, cor, self.rect)
-
-        x = self.rect.centerx
-        y = self.coordenada[1]
         
     def escrever(self, x_varia = 0, y_varia = 0):
         x = self.rect.centerx + x_varia
@@ -777,7 +774,6 @@ class Menu:
         import pygame as pg
         import numpy as np
         import game as gs #game src
-        import menu as mn
 
         CAMERA_DISTANCE = 15
         GRAVITY = 40
