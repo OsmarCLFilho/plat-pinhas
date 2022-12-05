@@ -67,7 +67,9 @@ class Botao () :
             self.__imagem_2 = imagem_2
         else:
             self.__imagem_2 = imagem
-        self.__som = pygame.mixer.Sound('audio/Select.wav')
+
+        if pygame.mixer.get_init() != None:
+            self.__som = pygame.mixer.Sound('audio/Select.wav')
         
         self.__font = pygame.font.SysFont("arialblack", 30) 
         self.__tamanho_botao = 1
@@ -192,7 +194,8 @@ class Botao () :
 
     @property
     def som(self):
-        return self.__som
+        if pygame.mixer.get_init() != None:
+            return self.__som
         
 
     @som.setter
@@ -202,7 +205,8 @@ class Botao () :
         Args:
             som (str): Endereço do som
         """
-        self.__som = pygame.mixer.Sound(som)
+        if pygame.mixer.get_init() != None:
+            self.__som = pygame.mixer.Sound(som)
 
     @property
     def tamanho_botao(self):
@@ -275,7 +279,8 @@ class Botao () :
         self.tela.blit(imagem,(x, y))
 
     def tocar_som(self):
-        self.som.play()
+        if pygame.mixer.get_init() != None:
+            self.som.play()
 
 
 class Personagem:
@@ -663,6 +668,7 @@ class Menu:
         self.pontos = 0
 
     def menu_principal(self):
+
         pygame.mixer.music.load("audio/voxel_revolution.wav") 
         pygame.mixer.music.play(loops=-1)
         pygame.mixer.music.set_volume(0.1)
