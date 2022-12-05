@@ -854,7 +854,7 @@ class Menu:
             # Exibe botão "Kevin"
             kevin.draw_image()
             kevin.font = font
-            kevin.escrever(y_varia = 10)
+            kevin.escrever(y_varia = 20)
 
             for event in pygame.event.get():
                 if event.type == pygame.MOUSEBUTTONDOWN:
