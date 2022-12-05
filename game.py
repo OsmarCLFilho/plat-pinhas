@@ -48,7 +48,8 @@ class Player(Body):
         self.vertical_speed = 0
         self.max_jumps = character.quantd_pulo
         self.jumps_available = character.quantd_pulo
-        self.jump_sound = pg.mixer.Sound("audio/Select.wav")
+        if pg.mixer.get_init() != None:
+            self.jump_sound = pg.mixer.Sound("audio/Select.wav")
 
     def dead(self):
         return not bool(self.hp_bar.sprite.health)
@@ -61,7 +62,9 @@ class Player(Body):
         if self.jumps_available > 0:
             self.vertical_speed = self.strength
             self.jumps_available -= 1
-            self.jump_sound.play()
+
+            if pg.mixer.get_init() != None:
+                self.jump_sound.play()
 
     def apply_damage(self, amount):
         self.iframes = 10
