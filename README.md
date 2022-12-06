@@ -4,7 +4,7 @@
 
 * [Documentação](http://plat-pinhas.readthedocs.io/)
 
-### Run main.py to play it!
+# >>> main.py para jogar! <<<
 
 ## Objetivo do Jogo
 O objetivo deste jogo é sobreviver o maior tempo possível, pulando da plataforma atual para a plataforma seguinte, caso o tempo acabe ou o personagem caia o jogo termina.
